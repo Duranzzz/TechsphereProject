@@ -1,13 +1,13 @@
-import { sql } from '../utils/sql';
+import { sql } from '@/app/api/utils/sql';
 
 export async function GET() {
     try {
-        const compras = await sql(`
+        const compras = await sql`
       SELECT c.*, p.nombre as proveedor_nombre
       FROM compras c
       LEFT JOIN proveedores p ON c.proveedor_id = p.id
       ORDER BY c.fecha_compra DESC
-    `);
+    `;
         return Response.json(compras);
     } catch (error) {
         console.error('Error fetching compras:', error);
@@ -27,12 +27,12 @@ export async function POST(request) {
         const total = items.reduce((sum, item) => sum + (item.cantidad * item.precio_unitario), 0);
 
         const result = await sql.transaction(async (tx) => {
-            // 1. Insert Header
+            // 1. Insert Header (with total included in parameters)
             const compraResult = await tx(
                 `INSERT INTO compras (proveedor_id, numero_factura, fecha_compra, total, estado)
          VALUES ($1, $2, $3, $4, 'completada')
          RETURNING id`,
-                [proveedor_id, numero_factura, fecha_compra || new Date()]
+                [proveedor_id, numero_factura, fecha_compra || new Date(), total]
             );
             const compraId = compraResult[0].id;
 

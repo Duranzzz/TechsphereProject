@@ -1,4 +1,4 @@
-import sql from "@/app/api/utils/sql";
+import { sql } from "@/app/api/utils/sql";
 import { hash } from "argon2";
 
 export async function POST() {

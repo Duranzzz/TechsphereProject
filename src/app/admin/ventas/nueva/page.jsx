@@ -65,9 +65,9 @@ function POSPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     cliente: clientData,
-                    items: cart.map(item => ({ producto_id: item.id, cantidad: item.cantidad, precio_unitario: item.precio })),
+                    productos: cart.map(item => ({ id: item.id, cantidad: item.cantidad })),
                     empleado_id: selectedEmpleado,
-                    total
+                    metodo_pago: 'efectivo'
                 })
             });
 

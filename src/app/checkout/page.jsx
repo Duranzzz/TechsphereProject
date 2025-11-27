@@ -31,13 +31,41 @@ export default function CheckoutPage() {
         e.preventDefault();
         setLoading(true);
 
-        // Simular proceso de pago
-        setTimeout(() => {
+        try {
+            const res = await fetch('/api/ventas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cliente: {
+                        nombre: formData.nombre,
+                        apellido: formData.apellido,
+                        email: formData.email,
+                        telefono: formData.telefono,
+                        direccion: formData.direccion
+                    },
+                    productos: cart.map(item => ({
+                        id: item.id,
+                        cantidad: item.cantidad
+                    })),
+                    metodo_pago: formData.metodo_pago
+                })
+            });
+
+            if (res.ok) {
+                setLoading(false);
+                setSuccess(true);
+                localStorage.removeItem('cart');
+                setCart([]);
+            } else {
+                const error = await res.json();
+                setLoading(false);
+                alert('Error: ' + (error.error || 'Error al procesar la venta'));
+            }
+        } catch (error) {
+            console.error('Error procesando venta:', error);
             setLoading(false);
-            setSuccess(true);
-            localStorage.removeItem('cart');
-            setCart([]);
-        }, 2000);
+            alert('Error al procesar la venta');
+        }
     };
 
     if (success) {

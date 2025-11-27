@@ -1,4 +1,4 @@
-import sql from "@/app/api/utils/sql";
+import { sql } from "@/app/api/utils/sql";
 
 export async function GET(request) {
   try {
@@ -64,16 +64,32 @@ export async function POST(request) {
       imagen_url,
     } = body;
 
+    // Basic validation
+    if (!nombre || !precio) {
+      return Response.json({ error: "Nombre y precio son requeridos" }, { status: 400 });
+    }
+
     const result = await sql`
       INSERT INTO productos (nombre, descripcion, precio, precio_costo, stock, stock_minimo, categoria_id, marca_id, sku, imagen_url)
-      VALUES (${nombre}, ${descripcion}, ${precio}, ${precio_costo}, ${stock}, ${stock_minimo}, ${categoria_id}, ${marca_id}, ${sku}, ${imagen_url})
+      VALUES (
+        ${nombre}, 
+        ${descripcion || ''}, 
+        ${precio}, 
+        ${precio_costo || 0}, 
+        ${stock || 0}, 
+        ${stock_minimo || 0}, 
+        ${categoria_id || null}, 
+        ${marca_id || null}, 
+        ${sku || null}, 
+        ${imagen_url || null}
+      )
       RETURNING *
     `;
 
     return Response.json(result[0]);
   } catch (error) {
     console.error("Error creating producto:", error);
-    return Response.json({ error: "Error creating producto" }, { status: 500 });
+    return Response.json({ error: error.message || "Error creating producto" }, { status: 500 });
   }
 }
 

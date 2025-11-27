@@ -478,11 +478,15 @@ function AdminDashboard() {
   }
 
   // Datos para gráficos
-  const ventasData = (dashboardData?.salesHistory || []).map((dia) => ({
-    name: new Date(dia.fecha).toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
-    ventas: parseFloat(dia.monto),
-    fecha: dia.fecha,
-  }));
+  const ventasData = (dashboardData?.salesHistory || []).map((dia) => {
+    const [year, month, day] = dia.fecha.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return {
+      name: date.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' }),
+      ventas: parseFloat(dia.monto),
+      fecha: dia.fecha,
+    };
+  });
 
   const productosStockBajo = productos.filter((p) => p.stock <= p.stock_minimo);
 
