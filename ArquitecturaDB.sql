@@ -535,3 +535,5 @@ ALTER TABLE ONLY public.ventas
 
 ALTER TABLE ONLY public.empleados
     ADD CONSTRAINT empleados_auth_user_id_fkey FOREIGN KEY (auth_user_id) REFERENCES public.auth_users(id);
+
+ALTER ROLE neondb_owner SET timezone TO 'America/La_Paz';
