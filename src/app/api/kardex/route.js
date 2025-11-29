@@ -1,4 +1,4 @@
-import { sql } from '@/app/api/utils/sql';
+import { query } from '@/lib/db';
 
 export async function GET(request) {
     const { searchParams } = new URL(request.url);
@@ -9,13 +9,15 @@ export async function GET(request) {
     }
 
     try {
-        const kardex = await sql(
-            `SELECT * FROM kardex 
-       WHERE producto_id = $1 
-       ORDER BY fecha DESC`,
+        const result = await query(
+            `SELECT k.*, u.nombre as ubicacion_nombre
+             FROM kardex k
+             LEFT JOIN ubicaciones u ON k.ubicacion_id = u.id
+             WHERE k.producto_id = $1 
+             ORDER BY k.fecha DESC`,
             [producto_id]
         );
-        return Response.json(kardex);
+        return Response.json(result.rows);
     } catch (error) {
         console.error('Error fetching kardex:', error);
         return Response.json({ error: 'Error fetching kardex' }, { status: 500 });

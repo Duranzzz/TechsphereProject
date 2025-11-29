@@ -1,28 +1,28 @@
-import { sql } from "@/app/api/utils/sql";
+import { query } from "@/lib/db";
 
 export async function GET() {
   try {
-    const [ventasHoy, productosStock, ventasMes, topProductos, salesHistory] =
-      await sql.transaction(async (tx) => {
-        return await Promise.all([
-          tx`
+    const [ventasHoyRes, productosStockRes, ventasMesRes, topProductosRes, salesHistoryRes] =
+      await Promise.all([
+        query(`
         SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
         FROM ventas 
         WHERE DATE(fecha) = CURRENT_DATE AND estado = 'completada'
-      `,
-          tx`
-        SELECT COUNT(*) as total
-        FROM productos 
-        WHERE stock <= stock_minimo AND activo = true
-      `,
-          tx`
+      `),
+        query(`
+        SELECT COUNT(DISTINCT p.id) as total
+        FROM productos p
+        JOIN inventario i ON p.id = i.producto_id
+        WHERE i.cantidad_disponible <= i.cantidad_minima AND p.activo = true
+      `),
+        query(`
         SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
         FROM ventas 
         WHERE EXTRACT(MONTH FROM fecha) = EXTRACT(MONTH FROM CURRENT_DATE)
         AND EXTRACT(YEAR FROM fecha) = EXTRACT(YEAR FROM CURRENT_DATE)
         AND estado = 'completada'
-      `,
-          tx`
+      `),
+        query(`
         SELECT p.nombre, SUM(dv.cantidad) as vendidos
         FROM detalles_venta dv
         JOIN productos p ON dv.producto_id = p.id
@@ -32,27 +32,32 @@ export async function GET() {
         GROUP BY p.id, p.nombre
         ORDER BY vendidos DESC
         LIMIT 5
-      `,
-          tx`
+      `),
+        query(`
         SELECT TO_CHAR(DATE(fecha), 'YYYY-MM-DD') as fecha, SUM(total) as monto, COUNT(*) as cantidad
         FROM ventas 
         WHERE fecha >= CURRENT_DATE - INTERVAL '6 days'
         AND estado = 'completada'
         GROUP BY DATE(fecha)
         ORDER BY DATE(fecha) ASC
-      `,
-        ]);
-      });
+      `),
+      ]);
+
+    const ventasHoy = ventasHoyRes.rows[0];
+    const productosStock = productosStockRes.rows[0];
+    const ventasMes = ventasMesRes.rows[0];
+    const topProductos = topProductosRes.rows;
+    const salesHistory = salesHistoryRes.rows;
 
     return Response.json({
       ventasHoy: {
-        total: parseInt(ventasHoy[0].total),
-        monto: parseFloat(ventasHoy[0].monto),
+        total: parseInt(ventasHoy.total),
+        monto: parseFloat(ventasHoy.monto),
       },
-      productosStock: parseInt(productosStock[0].total),
+      productosStock: parseInt(productosStock.total),
       ventasMes: {
-        total: parseInt(ventasMes[0].total),
-        monto: parseFloat(ventasMes[0].monto),
+        total: parseInt(ventasMes.total),
+        monto: parseFloat(ventasMes.monto),
       },
       topProductos,
       salesHistory,

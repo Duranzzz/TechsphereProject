@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   useQuery,
   QueryClient,
@@ -31,6 +32,7 @@ import {
 const queryClient = new QueryClient();
 
 function TechStore() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMarca, setSelectedMarca] = useState("");
@@ -411,7 +413,8 @@ function TechStore() {
                       <img
                         src={producto.imagen_url}
                         alt={producto.nombre}
-                        onClick={() => setLightboxImage(producto.imagen_url)}
+                        onClick={() => navigate(`/producto/${producto.id}`)}
+                        className="cursor-pointer"
                         referrerPolicy="no-referrer"
                         onError={(e) => {
                           console.error("Error loading image:", producto.imagen_url);
@@ -443,7 +446,7 @@ function TechStore() {
                         <Heart className="h-4 w-4 text-red-500" />
                       </button>
                       <button
-                        onClick={() => setSelectedProduct(producto)}
+                        onClick={() => navigate(`/producto/${producto.id}`)}
                         className="p-2 bg-white/80 rounded-full hover:bg-white transition-colors"
                       >
                         <Eye className="h-4 w-4 text-blue-500" />

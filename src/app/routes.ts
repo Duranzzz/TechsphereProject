@@ -13,6 +13,7 @@ type Tree = {
 	path: string;
 	children: Tree[];
 	hasPage: boolean;
+	hasRoute: boolean;
 	isParam: boolean;
 	paramName: string;
 	isCatchAll: boolean;
@@ -24,6 +25,7 @@ function buildRouteTree(dir: string, basePath = ''): Tree {
 		path: basePath,
 		children: [],
 		hasPage: false,
+		hasRoute: false,
 		isParam: false,
 		isCatchAll: false,
 		paramName: '',
@@ -54,7 +56,9 @@ function buildRouteTree(dir: string, basePath = ''): Tree {
 			node.children.push(childNode);
 		} else if (file === 'page.jsx') {
 			node.hasPage = true;
-    }
+		} else if (file === 'route.js' || file === 'route.ts') {
+			node.hasRoute = true;
+		}
 	}
 
 	return node;
@@ -96,6 +100,32 @@ function generateRoutes(node: Tree): RouteConfigEntry[] {
 			routePath = processedSegments.join('/');
 			routes.push(route(routePath, componentPath));
 		}
+	}
+
+	// Handle API routes
+	if (node.hasRoute) {
+		const routeFile = readdirSync(node.path ? join(__dirname, node.path) : __dirname).find(f => f === 'route.js' || f === 'route.ts');
+		const componentPath = node.path === '' ? `./${routeFile}` : `./${node.path}/${routeFile}`;
+
+		let routePath = node.path;
+		// Replace all parameter segments in the path (same logic as pages)
+		const segments = routePath.split('/');
+		const processedSegments = segments.map((segment) => {
+			if (segment.startsWith('[') && segment.endsWith(']')) {
+				const paramName = segment.slice(1, -1);
+				if (paramName.startsWith('...')) {
+					return '*';
+				}
+				if (paramName.startsWith('[') && paramName.endsWith(']')) {
+					return `:${paramName.slice(1, -1)}?`;
+				}
+				return `:${paramName}`;
+			}
+			return segment;
+		});
+		routePath = processedSegments.join('/');
+
+		routes.push(route(routePath, componentPath));
 	}
 
 	for (const child of node.children) {

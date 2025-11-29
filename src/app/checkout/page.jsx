@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { Package, ArrowLeft, CheckCircle, CreditCard, Truck, Mail, Phone, User, MapPin } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CheckoutPage() {
+    const { user } = useAuth();
     const [cart, setCart] = useState([]);
     const [formData, setFormData] = useState({
         nombre: '',
@@ -13,6 +15,17 @@ export default function CheckoutPage() {
         direccion: '',
         metodo_pago: 'efectivo'
     });
+
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                nombre: user.nombre || '',
+                email: user.email || '',
+                // If we had more user details in the auth token/context, we'd map them here
+            }));
+        }
+    }, [user]);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 

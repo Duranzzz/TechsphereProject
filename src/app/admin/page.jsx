@@ -7,7 +7,7 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import useUser from "@/utils/useUser";
+import { useAuth } from "@/hooks/useAuth";
 import {
   ShoppingCart,
   Package,
@@ -363,7 +363,7 @@ function ProductModal({ isOpen, onClose, product, categorias, marcas }) {
 }
 
 function AdminDashboard() {
-  const { data: user, loading: userLoading } = useUser();
+  const { user, loading: userLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMarca, setSelectedMarca] = useState("");
@@ -459,7 +459,7 @@ function AdminDashboard() {
   // Redirect to login if not authenticated
   if (!userLoading && !user) {
     if (typeof window !== "undefined") {
-      window.location.href = "/account/signin?callbackUrl=/admin";
+      window.location.href = "/login";
     }
     return null;
   }

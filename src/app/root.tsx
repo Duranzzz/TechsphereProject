@@ -23,7 +23,7 @@ import './global.css';
 
 import fetch from '@/__create/fetch';
 // @ts-ignore
-import { SessionProvider } from '@auth/create/react';
+import { AuthProvider } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router';
 import { serializeError } from 'serialize-error';
 import { Toaster } from 'sonner';
@@ -49,9 +49,8 @@ function SharedErrorBoundary({
 }): React.ReactElement {
   return (
     <div
-      className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-out ${
-        isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
-      }`}
+      className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 transition-all duration-500 ease-out ${isOpen ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+        }`}
     >
       <div className="bg-[#18191B] text-[#F2F2F2] rounded-lg p-4 max-w-md w-full mx-4 shadow-lg">
         <div className="flex items-start gap-3">
@@ -391,8 +390,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
 export default function App() {
   return (
-    <SessionProvider>
+    <AuthProvider>
       <Outlet />
-    </SessionProvider>
+    </AuthProvider>
   );
 }
