@@ -20,7 +20,12 @@ export async function POST(request) {
 
     // Check if client exists by email
     if (cliente.email) {
-      const existingClient = await client.query('SELECT id FROM clientes WHERE email = $1', [cliente.email]);
+      const existingClient = await client.query(`
+        SELECT c.id 
+        FROM clientes c 
+        JOIN users u ON c.user_id = u.id 
+        WHERE u.email = $1
+      `, [cliente.email]);
       if (existingClient.rows.length > 0) {
         clienteId = existingClient.rows[0].id;
       }
@@ -42,10 +47,7 @@ export async function POST(request) {
 
       // For now, let's assume we need an email. If not, fail or generate one.
       const email = cliente.email || `cliente_${Date.now()}@system.local`;
-      const password = await hashPassword('123456'); // We need a hash function, or just insert a dummy hash
-      // Actually, we can't import hashPassword easily here without argon2.
-      // Let's use a dummy hash for now or skip user creation if possible?
-      // Wait, `clientes` table has `user_id`.
+      // We rely on the hardcoded dummy hash below for this auto-generated user.
 
       // Let's check if we can reuse a "Guest" user/client?
       // Or just create a new user.

@@ -35,8 +35,8 @@ export async function POST(request) {
         let direccionId = null;
         if (direccion) {
             const dirRes = await client.query(
-                `INSERT INTO direcciones (calle, ciudad, codigo_postal, pais)
-                 VALUES ($1, 'Unknown', '0000', 'Unknown')
+                `INSERT INTO direcciones (calle, ciudad, estado, codigo_postal, pais)
+                 VALUES ($1, 'Unknown', 'Unknown', '0000', 'Unknown')
                  RETURNING id`,
                 [direccion]
             );

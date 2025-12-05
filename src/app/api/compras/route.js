@@ -77,12 +77,12 @@ export async function POST(request) {
                 INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (producto_id, ubicacion_id) 
-                DO UPDATE SET cantidad_disponible = inventario.cantidad_disponible + $3, updated_at = CURRENT_TIMESTAMP
+                DO UPDATE SET cantidad_disponible = inventario.cantidad_disponible + $3, ultima_actualizacion = CURRENT_TIMESTAMP
             `, [producto_id, locationId, cantidad]);
 
             // Update Cost Price in Productos
             await client.query(
-                `UPDATE productos SET precio_costo = $1, updated_at = CURRENT_TIMESTAMP
+                `UPDATE productos SET precio_costo = $1, fecha_actualizacion = CURRENT_TIMESTAMP
                  WHERE id = $2`,
                 [precio_unitario, producto_id]
             );
