@@ -363,7 +363,7 @@ function ProductModal({ isOpen, onClose, product, categorias, marcas }) {
 }
 
 function AdminDashboard() {
-  const { user, loading: userLoading } = useAuth();
+  const { user, loading: userLoading, logout } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMarca, setSelectedMarca] = useState("");
@@ -518,13 +518,16 @@ function AdminDashboard() {
                   {user?.name || "Admin"}
                 </span>
               </div>
-              <a
-                href="/account/logout"
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = "/";
+                }}
                 className="bg-rose-500/10 text-rose-400 flex items-center gap-2 p-3 rounded-xl hover:bg-rose-500/20 transition-colors duration-200 border border-rose-500/20"
                 title="Cerrar Sesión"
               >
                 <LogOut className="h-5 w-5" />
-              </a>
+              </button>
 
               {/* Hamburger Menu */}
               <div className="relative">
@@ -538,15 +541,7 @@ function AdminDashboard() {
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-4 w-72 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50 animate-in fade-in slide-in-from-top-5 duration-200">
                     <div className="p-2 space-y-1">
-                      <a
-                        href="/admin/ventas/nueva"
-                        className="w-full flex items-center gap-3 px-4 py-3 text-white hover:bg-white/10 rounded-xl transition-colors group"
-                      >
-                        <div className="bg-emerald-500/20 p-2 rounded-lg group-hover:bg-emerald-500/30 transition-colors">
-                          <Package className="h-5 w-5 text-emerald-400" />
-                        </div>
-                        <span className="font-medium">Nueva Venta</span>
-                      </a>
+
 
                       <button
                         onClick={() => {

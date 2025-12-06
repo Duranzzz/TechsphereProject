@@ -1,7 +1,7 @@
 import { query } from '@/lib/db';
 import argon2 from 'argon2';
 
-export async function action({ request }) {
+export async function POST(request) {
     if (request.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 });
     }
@@ -36,6 +36,25 @@ export async function action({ request }) {
                 status: 401,
                 headers: { 'Content-Type': 'application/json' },
             });
+        }
+
+        // Check if account is active for clients and employees
+        if (user.rol === 'cliente') {
+            const clientCheck = await query('SELECT activo FROM clientes WHERE user_id = $1', [user.id]);
+            if (clientCheck.rows.length > 0 && !clientCheck.rows[0].activo) {
+                return new Response(JSON.stringify({ error: 'Cuenta desactivada. Contacte a TechSphere.' }), {
+                    status: 403,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
+        } else if (user.rol === 'empleado') {
+            const employeeCheck = await query('SELECT activo FROM empleados WHERE user_id = $1', [user.id]);
+            if (employeeCheck.rows.length > 0 && !employeeCheck.rows[0].activo) {
+                return new Response(JSON.stringify({ error: 'Cuenta desactivada. Contacte a TechSphere.' }), {
+                    status: 403,
+                    headers: { 'Content-Type': 'application/json' },
+                });
+            }
         }
 
         // Remove password from response

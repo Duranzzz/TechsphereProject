@@ -15,7 +15,10 @@ export default function EditarProveedorPage() {
         contacto: '',
         telefono: '',
         email: '',
-        direccion: '',
+        calle: '',
+        ciudad: '',
+        estado: '',
+        pais: 'Bolivia',
         activo: true
     });
 
@@ -168,18 +171,65 @@ export default function EditarProveedorPage() {
                             />
                         </div>
 
-                        {/* Dirección - Full Width */}
-                        <div className="space-y-3 md:col-span-2 group">
-                            <label className="text-sm font-medium text-purple-200/80 flex items-center gap-2 group-focus-within:text-purple-300 transition-colors">
-                                <MapPin className="h-4 w-4 text-purple-400" />
-                                Dirección
-                            </label>
-                            <textarea
-                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-purple-300/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all h-32 resize-none"
-                                placeholder="Dirección completa de la empresa..."
-                                value={formData.direccion || ''}
-                                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                            />
+                        {/* Address Fields */}
+                        <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-3 group">
+                                <label className="text-sm font-medium text-purple-200/80 flex items-center gap-2 group-focus-within:text-purple-300 transition-colors">
+                                    <MapPin className="h-4 w-4 text-purple-400" />
+                                    Calle / Av. <span className="text-purple-400/50 text-xs">(Opcional)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-purple-300/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                    placeholder="Av. Principal #123"
+                                    value={formData.calle || ''}
+                                    onChange={(e) => setFormData({ ...formData, calle: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-3 group">
+                                <label className="text-sm font-medium text-purple-200/80 flex items-center gap-2 group-focus-within:text-purple-300 transition-colors">
+                                    <MapPin className="h-4 w-4 text-purple-400" />
+                                    Ciudad *
+                                </label>
+                                <input
+                                    required
+                                    type="text"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-purple-300/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                    placeholder="Ej: Santa Cruz"
+                                    value={formData.ciudad || ''}
+                                    onChange={(e) => setFormData({ ...formData, ciudad: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-3 group">
+                                <label className="text-sm font-medium text-purple-200/80 flex items-center gap-2 group-focus-within:text-purple-300 transition-colors">
+                                    <MapPin className="h-4 w-4 text-purple-400" />
+                                    Estado / Depto. *
+                                </label>
+                                <input
+                                    required
+                                    type="text"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-purple-300/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                    placeholder="Ej: Andrés Ibáñez"
+                                    value={formData.estado || ''}
+                                    onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+                                />
+                            </div>
+
+                            <div className="space-y-3 group">
+                                <label className="text-sm font-medium text-purple-200/80 flex items-center gap-2 group-focus-within:text-purple-300 transition-colors">
+                                    <MapPin className="h-4 w-4 text-purple-400" />
+                                    País
+                                </label>
+                                <input
+                                    type="text"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-purple-300/20 focus:outline-none focus:border-purple-500/50 focus:ring-2 focus:ring-purple-500/20 transition-all"
+                                    placeholder="Ej: Bolivia"
+                                    value={formData.pais || ''}
+                                    onChange={(e) => setFormData({ ...formData, pais: e.target.value })}
+                                />
+                            </div>
                         </div>
 
                         {/* Estado */}

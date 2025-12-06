@@ -1,57 +1,84 @@
-import { query } from '@/lib/db';
+
+import { pool } from '@/lib/db';
 import argon2 from 'argon2';
 
-export async function action({ request }) {
-    if (request.method !== 'POST') {
-        return new Response('Method not allowed', { status: 405 });
-    }
-
+export async function POST(request) {
     try {
-        const { nombre, email, password } = await request.json();
+        const body = await request.json();
+        const { nombre, apellido, email, telefono, password, calle, ciudad, estado, pais } = body;
 
-        if (!nombre || !email || !password) {
-            return new Response(JSON.stringify({ error: 'Todos los campos son requeridos' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+        // Basic validation
+        if (!nombre || !email || !password || !ciudad || !estado) {
+            return Response.json(
+                { error: 'Faltan campos obligatorios' },
+                { status: 400 }
+            );
         }
 
-        // Check if user exists
-        const existingUser = await query('SELECT id FROM users WHERE email = $1', [email]);
-        if (existingUser.rows.length > 0) {
-            return new Response(JSON.stringify({ error: 'El usuario ya existe' }), {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-            });
+        // Check if email already exists
+        const emailCheck = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
+        if (emailCheck.rows.length > 0) {
+            return Response.json(
+                { error: 'El correo electrónico ya está registrado' },
+                { status: 409 }
+            );
         }
 
+        // Hash password
         const hashedPassword = await argon2.hash(password);
 
-        const result = await query(
-            `INSERT INTO users (nombre, email, password, rol) 
-       VALUES ($1, $2, $3, 'cliente') 
-       RETURNING id, nombre, email, rol, foto_url`,
-            [nombre, email, hashedPassword]
-        );
+        // Transaction for atomicity
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-        const user = result.rows[0];
+            // 1. Create Address
+            const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
+            const paisValue = pais || 'Bolivia';
 
-        // Also create a client record for this user
-        await query(
-            `INSERT INTO clientes (nombre, email, user_id, tipo)
-         VALUES ($1, $2, $3, 'consumidor_final')`,
-            [nombre, email, user.id]
-        );
+            const addressRes = await client.query(
+                `INSERT INTO direcciones (calle, ciudad, estado, pais) 
+                 VALUES ($1, $2, $3, $4) 
+                 RETURNING id`,
+                [calleValue, ciudad, estado, paisValue]
+            );
+            const direccionId = addressRes.rows[0].id;
 
-        return new Response(JSON.stringify({ user }), {
-            status: 201,
-            headers: { 'Content-Type': 'application/json' },
-        });
+            // 2. Create User
+            const userResult = await client.query(
+                `INSERT INTO users (nombre, email, password, rol) 
+                 VALUES ($1, $2, $3, 'cliente') 
+                 RETURNING id`,
+                [nombre, email, hashedPassword]
+            );
+            const userId = userResult.rows[0].id;
+
+            // 3. Create Client Profile
+            await client.query(
+                `INSERT INTO clientes (nombre, apellido, telefono, user_id, tipo, direccion_id) 
+                 VALUES ($1, $2, $3, $4, 'consumidor_final', $5)`,
+                [nombre, apellido || null, telefono || null, userId, direccionId]
+            );
+
+            await client.query('COMMIT');
+
+            return Response.json(
+                { message: 'Usuario registrado correctamente', userId },
+                { status: 201 }
+            );
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            throw error;
+        } finally {
+            client.release();
+        }
+
     } catch (error) {
-        console.error('Register error:', error);
-        return new Response(JSON.stringify({ error: 'Error interno del servidor' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
-        });
+        console.error('Registration error:', error);
+        return Response.json(
+            { error: 'Error al registrar usuario' },
+            { status: 500 }
+        );
     }
 }

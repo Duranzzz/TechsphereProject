@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request) {
     const client = await pool.connect();
     try {
-        const { nombre, contacto, telefono, email, direccion } = await request.json();
+        const { nombre, contacto, telefono, email, calle, ciudad, estado, pais } = await request.json();
 
         if (!nombre) {
             return Response.json({ error: 'El nombre es obligatorio' }, { status: 400 });
@@ -31,29 +31,30 @@ export async function POST(request) {
 
         await client.query('BEGIN');
 
-        // Create Address
-        let direccionId = null;
-        if (direccion) {
-            const dirRes = await client.query(
-                `INSERT INTO direcciones (calle, ciudad, estado, codigo_postal, pais)
-                 VALUES ($1, 'Unknown', 'Unknown', '0000', 'Unknown')
-                 RETURNING id`,
-                [direccion]
-            );
-            direccionId = dirRes.rows[0].id;
-        }
+        // 1. Create Address
+        const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
+        const paisValue = pais || 'Bolivia';
+        const ciudadValue = ciudad || '';
+        const estadoValue = estado || '';
 
-        // Create Provider
-        const result = await client.query(
-            `INSERT INTO proveedores (nombre, contacto, telefono, email, direccion_id)
-             VALUES ($1, $2, $3, $4, $5)
+        const addressRes = await client.query(
+            `INSERT INTO direcciones (calle, ciudad, estado, pais) 
+             VALUES ($1, $2, $3, $4) 
+             RETURNING id`,
+            [calleValue, ciudadValue, estadoValue, paisValue]
+        );
+        const direccionId = addressRes.rows[0].id;
+
+        // 2. Create Provider
+        const res = await client.query(
+            `INSERT INTO proveedores (nombre, contacto, telefono, email, direccion_id, activo) 
+             VALUES ($1, $2, $3, $4, $5, true) 
              RETURNING *`,
             [nombre, contacto, telefono, email, direccionId]
         );
 
         await client.query('COMMIT');
-        return Response.json(result.rows[0], { status: 201 });
-
+        return Response.json(res.rows[0], { status: 201 });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error creating proveedor:', error);

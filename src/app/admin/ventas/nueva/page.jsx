@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Search, Plus, Trash2, User, ShoppingCart, Save, ArrowLeft, Package, CreditCard, Minus, DollarSign } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Search, Plus, Trash2, User, ShoppingCart, Save, ArrowLeft, Package, CreditCard, Minus, DollarSign, LogOut } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -12,6 +13,8 @@ function POSPage() {
     const [clientData, setClientData] = useState({ nombre: "", apellido: "", telefono: "", email: "", direccion: "" });
     const [selectedEmpleado, setSelectedEmpleado] = useState("");
     const [loading, setLoading] = useState(false);
+    const { logout } = useAuth();
+    const navigate = (path) => window.location.href = path; // Simple navigation or use useNavigate if router available
 
     // Fetch products
     const { data: productos = [] } = useQuery({
@@ -92,9 +95,16 @@ function POSPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center gap-4 mb-8">
-                    <a href="/admin" className="p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10 group">
-                        <ArrowLeft className="h-6 w-6 text-blue-300 group-hover:text-white" />
-                    </a>
+                    <button
+                        onClick={async () => {
+                            await logout();
+                            window.location.href = '/';
+                        }}
+                        className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl transition-colors border border-white/10 group bg-rose-500/10"
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut className="h-6 w-6 text-rose-400 group-hover:text-rose-500" />
+                    </button>
                     <div>
                         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                             Nueva Venta

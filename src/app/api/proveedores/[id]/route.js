@@ -6,8 +6,9 @@ export async function GET(request, { params }) {
         const { id } = await params;
         const result = await client.query(`
             SELECT p.*, 
-                   d.calle as direccion,
+                   d.calle,
                    d.ciudad,
+                   d.estado,
                    d.pais
             FROM proveedores p
             LEFT JOIN direcciones d ON p.direccion_id = d.id
@@ -17,14 +18,6 @@ export async function GET(request, { params }) {
         if (result.rows.length === 0) {
             return Response.json({ error: 'Proveedor no encontrado' }, { status: 404 });
         }
-
-        // Flatten address for frontend if needed, or keep as is.
-        // Frontend expects 'direccion' string.
-        // We return 'direccion' as the street (calle) from the query above.
-        // If we want full address string:
-        // But for editing, we might want the raw value to edit.
-        // The previous GET returned 'direccion' column.
-        // Here we return 'calle' aliased as 'direccion'.
 
         return Response.json(result.rows[0]);
     } catch (error) {
@@ -39,7 +32,7 @@ export async function PUT(request, { params }) {
     const client = await pool.connect();
     try {
         const { id } = await params;
-        const { nombre, contacto, telefono, email, direccion, activo } = await request.json();
+        const { nombre, contacto, telefono, email, calle, ciudad, estado, pais, activo } = await request.json();
 
         if (!nombre) {
             return Response.json({ error: 'El nombre es obligatorio' }, { status: 400 });
@@ -55,23 +48,25 @@ export async function PUT(request, { params }) {
         }
 
         let direccionId = currentRes.rows[0].direccion_id;
+        const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
+        const paisValue = pais || 'Bolivia';
 
         // Update or Create Address
-        if (direccion) {
-            if (direccionId) {
-                await client.query(
-                    'UPDATE direcciones SET calle = $1 WHERE id = $2',
-                    [direccion, direccionId]
-                );
-            } else {
-                const dirRes = await client.query(
-                    `INSERT INTO direcciones (calle, ciudad, codigo_postal, pais)
-                     VALUES ($1, 'Unknown', '0000', 'Unknown')
-                     RETURNING id`,
-                    [direccion]
-                );
-                direccionId = dirRes.rows[0].id;
-            }
+        if (direccionId) {
+            await client.query(
+                `UPDATE direcciones 
+                 SET calle = $1, ciudad = $2, estado = $3, pais = $4
+                 WHERE id = $5`,
+                [calleValue, ciudad, estado, paisValue, direccionId]
+            );
+        } else {
+            const dirRes = await client.query(
+                `INSERT INTO direcciones (calle, ciudad, estado, pais)
+                 VALUES ($1, $2, $3, $4)
+                 RETURNING id`,
+                [calleValue, ciudad, estado, paisValue]
+            );
+            direccionId = dirRes.rows[0].id;
         }
 
         // Update Provider
