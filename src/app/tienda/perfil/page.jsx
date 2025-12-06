@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router";
 import {
     User, Lock, ShieldAlert, LogOut, ShoppingBag,
     DollarSign, Star, ArrowLeft, Save, Eye, EyeOff,
-    CreditCard, Clock, Activity, MapPin
+    CreditCard, Clock, Activity, MapPin, Plus, Trash2, CheckCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +32,11 @@ export default function ProfilePage() {
     const [passwordData, setPasswordData] = useState({ current_password: "", new_password: "", confirm_password: "" });
     const [deactivatePassword, setDeactivatePassword] = useState("");
 
+    // Address state
+    const [addresses, setAddresses] = useState([]);
+    const [showAddressModal, setShowAddressModal] = useState(false);
+    const [addressForm, setAddressForm] = useState({ alias: "", calle: "", ciudad: "", estado: "", pais: "Bolivia", es_principal: false });
+
     // Reviews state
     const [editingReview, setEditingReview] = useState(null);
 
@@ -41,12 +46,13 @@ export default function ProfilePage() {
     useEffect(() => {
         if (user?.id) {
             fetchProfile();
+            fetchAddresses();
         }
     }, [user]);
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch(`/api/cliente/perfil?user_id=${user.id}`);
+            const res = await fetch(`/api/cliente/perfil?user_id=${user.id}`, { cache: 'no-store' });
             const data = await res.json();
 
             if (res.ok) {
@@ -67,6 +73,79 @@ export default function ProfilePage() {
         } catch (error) {
             console.error("Error fetching profile:", error);
             setLoading(false);
+        }
+    };
+
+    const fetchAddresses = async () => {
+        try {
+            const res = await fetch(`/api/cliente/direcciones?user_id=${user.id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setAddresses(data);
+            }
+        } catch (error) {
+            console.error("Error fetching addresses:", error);
+        }
+    };
+
+    const handleAddAddress = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch("/api/cliente/direcciones", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ...addressForm, user_id: user.id })
+            });
+            if (res.ok) {
+                toast.success("Dirección agregada");
+                setShowAddressModal(false);
+                setAddressForm({ alias: "", calle: "", ciudad: "", estado: "", pais: "Bolivia", es_principal: false });
+                fetchAddresses();
+                // Refresh profile to update "summary" address if principal changed
+                if (addressForm.es_principal) fetchProfile();
+            } else {
+                toast.error("Error al agregar dirección");
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    const handleDeleteAddress = async (id) => {
+        if (!confirm("¿Eliminar esta dirección?")) return;
+        try {
+            const res = await fetch(`/api/cliente/direcciones/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: user.id })
+            });
+            if (res.ok) {
+                toast.success("Dirección eliminada");
+                fetchAddresses();
+            } else {
+                toast.error("Error al eliminar");
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    const handleSetPrincipal = async (id) => {
+        try {
+            const res = await fetch(`/api/cliente/direcciones/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ user_id: user.id, action: "set_principal" })
+            });
+            if (res.ok) {
+                toast.success("Establecida como principal");
+                fetchAddresses();
+                fetchProfile(); // Update summary
+            } else {
+                toast.error("Error al actualizar");
+            }
+        } catch (error) {
+            toast.error(error.message);
         }
     };
 
@@ -248,6 +327,15 @@ export default function ProfilePage() {
                                         }`}
                                 >
                                     <Lock className="h-5 w-5" /> Seguridad
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab("direcciones")}
+                                    className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-all flex items-center gap-3 ${activeTab === "direcciones"
+                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                                        : "text-gray-400 hover:text-white hover:bg-white/5"
+                                        }`}
+                                >
+                                    <MapPin className="h-5 w-5" /> Direcciones
                                 </button>
                             </nav>
                         </div>
@@ -652,9 +740,153 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                         )}
+
+                        {activeTab === "direcciones" && (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-xl font-bold text-white">Mis Direcciones</h3>
+                                    <button
+                                        onClick={() => setShowAddressModal(true)}
+                                        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+                                    >
+                                        <Plus className="h-4 w-4" /> Nueva Dirección
+                                    </button>
+                                </div>
+
+                                <div className="grid gap-4">
+                                    {addresses.map((addr) => (
+                                        <div key={addr.id} className={`bg-white/5 backdrop-blur-sm p-6 rounded-2xl border transition-all group ${addr.es_principal ? 'border-blue-500/50 bg-blue-900/10' : 'border-white/5 hover:border-white/10'}`}>
+                                            <div className="flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-3">
+                                                        <h4 className="font-bold text-white text-lg">{addr.alias || 'Sin Alias'}</h4>
+                                                        {addr.es_principal && (
+                                                            <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1">
+                                                                <CheckCircle className="h-3 w-3" /> Principal
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-gray-300">{addr.calle}</p>
+                                                    <p className="text-gray-400 text-sm">{addr.ciudad}, {addr.estado}, {addr.pais}</p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    {!addr.es_principal && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleSetPrincipal(addr.id)}
+                                                                className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                                title="Establecer como principal"
+                                                            >
+                                                                <CheckCircle className="h-5 w-5" />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteAddress(addr.id)}
+                                                                className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                                title="Eliminar"
+                                                            >
+                                                                <Trash2 className="h-5 w-5" />
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {addresses.length === 0 && (
+                                        <div className="text-center py-12 bg-white/5 rounded-3xl border border-white/5 border-dashed">
+                                            <MapPin className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                                            <h4 className="text-gray-300 font-medium mb-1">No tienes direcciones guardadas</h4>
+                                            <p className="text-gray-500 text-sm">Agrega una dirección para facilitar tus pedidos</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* Address Modal */}
+            {showAddressModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="bg-[#0B1120] rounded-3xl shadow-2xl max-w-lg w-full p-8 border border-white/10 relative animate-in zoom-in-95 duration-200">
+                        <button
+                            onClick={() => setShowAddressModal(false)}
+                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
+
+                        <h3 className="text-2xl font-bold text-white mb-6">Nueva Dirección</h3>
+
+                        <form onSubmit={handleAddAddress} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">Alias (Ej: Casa, Trabajo)</label>
+                                <input
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                    value={addressForm.alias}
+                                    onChange={(e) => setAddressForm({ ...addressForm, alias: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">Calle / Avenida</label>
+                                <input
+                                    required
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                    value={addressForm.calle}
+                                    onChange={(e) => setAddressForm({ ...addressForm, calle: e.target.value })}
+                                />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Ciudad</label>
+                                    <input
+                                        required
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                        value={addressForm.ciudad}
+                                        onChange={(e) => setAddressForm({ ...addressForm, ciudad: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">Estado</label>
+                                    <input
+                                        required
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                        value={addressForm.estado}
+                                        onChange={(e) => setAddressForm({ ...addressForm, estado: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-2">País</label>
+                                <input
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                    value={addressForm.pais}
+                                    onChange={(e) => setAddressForm({ ...addressForm, pais: e.target.value })}
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="checkbox"
+                                    id="es_principal"
+                                    checked={addressForm.es_principal}
+                                    onChange={(e) => setAddressForm({ ...addressForm, es_principal: e.target.checked })}
+                                    className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-blue-600 focus:ring-blue-500"
+                                />
+                                <label htmlFor="es_principal" className="text-white text-sm">Establecer como dirección principal</label>
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="w-full px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+                            >
+                                Guardar Dirección
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Review Edit Modal */}
             {editingReview && (

@@ -54,10 +54,19 @@ export async function POST(request) {
             const userId = userResult.rows[0].id;
 
             // 3. Create Client Profile
+            const clientResult = await client.query(
+                `INSERT INTO clientes (nombre, apellido, telefono, user_id, tipo) 
+                 VALUES ($1, $2, $3, $4, 'consumidor_final')
+                 RETURNING id`,
+                [nombre, apellido || null, telefono || null, userId]
+            );
+            const clientId = clientResult.rows[0].id;
+
+            // 4. Link Address
             await client.query(
-                `INSERT INTO clientes (nombre, apellido, telefono, user_id, tipo, direccion_id) 
-                 VALUES ($1, $2, $3, $4, 'consumidor_final', $5)`,
-                [nombre, apellido || null, telefono || null, userId, direccionId]
+                `INSERT INTO cliente_direcciones (cliente_id, direccion_id, alias, es_principal) 
+                 VALUES ($1, $2, 'Casa', true)`,
+                [clientId, direccionId]
             );
 
             await client.query('COMMIT');

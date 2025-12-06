@@ -87,10 +87,20 @@ CREATE TABLE public.clientes (
     tipo character varying(20) DEFAULT 'consumidor_final' CHECK (tipo IN ('consumidor_final', 'empresa')),
     fecha_registro timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     activo boolean DEFAULT true,
-    user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-    direccion_id INTEGER REFERENCES public.direcciones(id)
+    user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE
 );
 ALTER TABLE public.clientes OWNER TO neondb_owner;
+
+CREATE TABLE public.cliente_direcciones (
+    id SERIAL PRIMARY KEY,
+    cliente_id INTEGER NOT NULL REFERENCES public.clientes(id) ON DELETE CASCADE,
+    direccion_id INTEGER NOT NULL REFERENCES public.direcciones(id) ON DELETE CASCADE,
+    alias VARCHAR(50),
+    es_principal BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT cliente_direcciones_unico UNIQUE (cliente_id, direccion_id)
+);
+ALTER TABLE public.cliente_direcciones OWNER TO neondb_owner;
 
 CREATE TABLE public.empleados (
     id SERIAL PRIMARY KEY,
@@ -257,6 +267,7 @@ ALTER TABLE public.kardex OWNER TO neondb_owner;
 CREATE INDEX idx_inventario_producto ON public.inventario(producto_id);
 CREATE INDEX idx_inventario_ubicacion ON public.inventario(ubicacion_id);
 CREATE INDEX idx_direcciones_busqueda ON public.direcciones(id);
+CREATE INDEX idx_cliente_direcciones_cliente ON public.cliente_direcciones(cliente_id);
 CREATE INDEX idx_ventas_cliente ON public.ventas(cliente_id);
 CREATE INDEX idx_ventas_fecha ON public.ventas(fecha);
 CREATE INDEX idx_kardex_producto_fecha ON public.kardex(producto_id, fecha);

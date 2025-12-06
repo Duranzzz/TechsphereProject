@@ -1,4 +1,4 @@
-import { query } from '@/lib/db';
+import { query, pool } from '@/lib/db';
 import argon2 from 'argon2';
 
 export async function GET(request) {
@@ -12,11 +12,17 @@ export async function GET(request) {
     try {
         // Fetch user basic info
         const userRes = await query(`
-            SELECT u.id, u.nombre, u.email, u.foto_url, c.id as cliente_id, c.apellido, c.telefono, c.activo,
+            SELECT u.id, c.nombre, u.email, u.foto_url, c.id as cliente_id, c.apellido, c.telefono, c.activo,
                    d.id as direccion_id, d.calle, d.ciudad, d.estado, d.pais
             FROM users u 
             JOIN clientes c ON c.user_id = u.id
-            LEFT JOIN direcciones d ON c.direccion_id = d.id
+            LEFT JOIN (
+                SELECT DISTINCT ON (cliente_id) cliente_id, direccion_id 
+                FROM cliente_direcciones 
+                WHERE es_principal = true 
+                ORDER BY cliente_id, created_at DESC
+            ) cd ON cd.cliente_id = c.id
+            LEFT JOIN direcciones d ON cd.direccion_id = d.id
             WHERE u.id = $1
         `, [userId]);
 
@@ -62,78 +68,93 @@ export async function GET(request) {
 }
 
 export async function PUT(request) {
+    const client = await pool.connect();
     try {
         const body = await request.json();
 
-        // Check for action type to distinguish between profile update and review update
+        // 1. Manejo de Actualización de Reseñas
         if (body.action === 'update_review') {
             const { review_id, calificacion, comentario, user_id } = body;
 
-            // Verify ownership via user_id -> cliente_id
-            // First get cliente_id from user_id
-            const clientRes = await query('SELECT id FROM clientes WHERE user_id = $1', [user_id]);
+            const clientRes = await client.query('SELECT id FROM clientes WHERE user_id = $1', [user_id]);
             if (clientRes.rows.length === 0) return new Response(JSON.stringify({ error: 'Cliente no encontrado' }), { status: 404 });
 
             const clienteId = clientRes.rows[0].id;
 
-            // Check if review belongs to client
-            const reviewCheck = await query('SELECT id FROM reviews WHERE id = $1 AND cliente_id = $2', [review_id, clienteId]);
+            const reviewCheck = await client.query('SELECT id FROM reviews WHERE id = $1 AND cliente_id = $2', [review_id, clienteId]);
             if (reviewCheck.rows.length === 0) {
                 return new Response(JSON.stringify({ error: 'Review no encontrada o no autorizada' }), { status: 404 });
             }
 
-            await query('UPDATE reviews SET calificacion = $1, comentario = $2, fecha_review = CURRENT_TIMESTAMP WHERE id = $3', [calificacion, comentario, review_id]);
+            await client.query('UPDATE reviews SET calificacion = $1, comentario = $2, fecha_review = CURRENT_TIMESTAMP WHERE id = $3', [calificacion, comentario, review_id]);
             return new Response(JSON.stringify({ message: 'Reseña actualizada' }), { status: 200 });
         }
 
-        // Default: Update Profile
-        // Default: Update Profile
+        // 2. Manejo de Actualización de Perfil
         const { user_id, nombre, apellido, email, telefono, calle, ciudad, estado, pais } = body;
 
-        // Transaction manually (or sequential updates)
-        const client = await query('BEGIN');
-        // Note: 'query' helper might not support BEGIN/COMMIT if it's just pool.query. 
-        // Checking file... 'import { query } from ...' likely just pool.query.
-        // I will do sequential updates.
+        await client.query('BEGIN'); // Iniciar Transacción
 
-        // Update users table
-        await query('UPDATE users SET nombre = $1, email = $2 WHERE id = $3', [nombre, email, user_id]);
+        // Actualizar tabla users
+        await client.query('UPDATE users SET nombre = $1, email = $2 WHERE id = $3', [nombre, email, user_id]);
 
-        // Get cliente info to find address
-        const clienteRes = await query('SELECT id, direccion_id FROM clientes WHERE user_id = $1', [user_id]);
+        // Buscar cliente y dirección actual
+        const clienteRes = await client.query(`
+            SELECT c.id, cd.direccion_id 
+            FROM clientes c
+            LEFT JOIN (
+                SELECT DISTINCT ON (cliente_id) cliente_id, direccion_id 
+                FROM cliente_direcciones 
+                WHERE es_principal = true 
+                ORDER BY cliente_id, created_at DESC
+            ) cd ON c.id = cd.cliente_id
+            WHERE c.user_id = $1
+        `, [user_id]);
+
         if (clienteRes.rows.length > 0) {
             const cliente = clienteRes.rows[0];
 
-            // Update clientes table
-            await query('UPDATE clientes SET nombre = $1, apellido = $2, telefono = $3 WHERE user_id = $4', [nombre, apellido, telefono, user_id]);
+            // Actualizar tabla clientes
+            await client.query('UPDATE clientes SET nombre = $1, apellido = $2, telefono = $3 WHERE user_id = $4', [nombre, apellido, telefono, user_id]);
 
-            // Update Address if exists, else create
+            // Actualizar o Crear Dirección
             if (cliente.direccion_id) {
                 const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
-                await query('UPDATE direcciones SET calle = $1, ciudad = $2, estado = $3, pais = $4 WHERE id = $5',
+                await client.query('UPDATE direcciones SET calle = $1, ciudad = $2, estado = $3, pais = $4 WHERE id = $5',
                     [calleValue, ciudad, estado, pais, cliente.direccion_id]);
             } else {
-                // Create new address if missing
                 const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
-                const newAddr = await query('INSERT INTO direcciones (calle, ciudad, estado, pais) VALUES ($1, $2, $3, $4) RETURNING id',
+                const newAddr = await client.query('INSERT INTO direcciones (calle, ciudad, estado, pais) VALUES ($1, $2, $3, $4) RETURNING id',
                     [calleValue, ciudad, estado, pais || 'Bolivia']);
-                await query('UPDATE clientes SET direccion_id = $1 WHERE id = $2', [newAddr.rows[0].id, cliente.id]);
+
+                // Asegurar que solo haya 1 principal
+                await client.query('UPDATE cliente_direcciones SET es_principal = false WHERE cliente_id = $1', [cliente.id]);
+
+                // Vincular nueva dirección
+                await client.query('INSERT INTO cliente_direcciones (cliente_id, direccion_id, alias, es_principal) VALUES ($1, $2, $3, $4)',
+                    [cliente.id, newAddr.rows[0].id, 'Casa', true]);
             }
         }
 
+        await client.query('COMMIT'); // Guardar cambios
         return new Response(JSON.stringify({ message: 'Profile updated' }), { status: 200 });
+
     } catch (error) {
+        await client.query('ROLLBACK'); // Cancelar si hay error
         console.error(error);
         return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 });
+    } finally {
+        client.release(); // Liberar conexión importante
     }
 }
 
 export async function PATCH(request) {
+    const client = await pool.connect();
     try {
         const { user_id, type, current_password, new_password, password } = await request.json(); // type: 'password' or 'deactivate'
 
         // Get current password hash
-        const userRes = await query('SELECT password FROM users WHERE id = $1', [user_id]);
+        const userRes = await client.query('SELECT password FROM users WHERE id = $1', [user_id]);
         if (userRes.rows.length === 0) return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
 
         const currentHash = userRes.rows[0].password;
@@ -143,19 +164,21 @@ export async function PATCH(request) {
             if (!valid) return new Response(JSON.stringify({ error: 'Contraseña actual incorrecta' }), { status: 400 });
 
             const newHash = await argon2.hash(new_password);
-            await query('UPDATE users SET password = $1 WHERE id = $2', [newHash, user_id]);
+            await client.query('UPDATE users SET password = $1 WHERE id = $2', [newHash, user_id]);
 
             return new Response(JSON.stringify({ message: 'Contraseña actualizada' }), { status: 200 });
         } else if (type === 'deactivate') {
             const valid = await argon2.verify(currentHash, password);
             if (!valid) return new Response(JSON.stringify({ error: 'Contraseña incorrecta' }), { status: 400 });
 
-            await query('UPDATE clientes SET activo = false WHERE user_id = $1', [user_id]);
+            await client.query('UPDATE clientes SET activo = false WHERE user_id = $1', [user_id]);
             return new Response(JSON.stringify({ message: 'Cuenta desactivada' }), { status: 200 });
         }
 
     } catch (error) {
         console.error(error);
         return new Response(JSON.stringify({ error: 'Server error' }), { status: 500 });
+    } finally {
+        client.release();
     }
 }

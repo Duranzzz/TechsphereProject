@@ -17,7 +17,21 @@ export async function POST(request) {
         }
 
         const result = await query(
-            'SELECT id, nombre, email, password, rol, foto_url FROM users WHERE email = $1',
+            `SELECT 
+                u.id, 
+                COALESCE(c.nombre, u.nombre) as nombre, 
+                c.apellido, 
+                u.email, 
+                u.password, 
+                u.rol, 
+                u.foto_url,
+                c.telefono,
+                c.activo as cliente_activo,
+                e.activo as empleado_activo
+             FROM users u
+             LEFT JOIN clientes c ON u.id = c.user_id
+             LEFT JOIN empleados e ON u.id = e.user_id
+             WHERE u.email = $1`,
             [email]
         );
 
@@ -40,22 +54,30 @@ export async function POST(request) {
 
         // Check if account is active for clients and employees
         if (user.rol === 'cliente') {
-            const clientCheck = await query('SELECT activo FROM clientes WHERE user_id = $1', [user.id]);
-            if (clientCheck.rows.length > 0 && !clientCheck.rows[0].activo) {
+            // Note: If no client record exists despite role 'cliente', we strictly valid against user record? 
+            // The LEFT JOIN returns null for cliente_activo if no record.
+            // Assuming if they are role 'cliente', they SHOULD have a record, but if not, we default to active unless explicitly false?
+            // Actually, if client record is missing, cliente_activo is null. We should handle that.
+            // But based on inserts `active` defaults to true.
+
+            if (user.cliente_activo === false) {
                 return new Response(JSON.stringify({ error: 'Cuenta desactivada. Contacte a TechSphere.' }), {
                     status: 403,
                     headers: { 'Content-Type': 'application/json' },
                 });
             }
         } else if (user.rol === 'empleado') {
-            const employeeCheck = await query('SELECT activo FROM empleados WHERE user_id = $1', [user.id]);
-            if (employeeCheck.rows.length > 0 && !employeeCheck.rows[0].activo) {
+            if (user.empleado_activo === false) {
                 return new Response(JSON.stringify({ error: 'Cuenta desactivada. Contacte a TechSphere.' }), {
                     status: 403,
                     headers: { 'Content-Type': 'application/json' },
                 });
             }
         }
+
+        // Clean up internal helper fields before returning
+        delete user.cliente_activo;
+        delete user.empleado_activo;
 
         // Remove password from response
         delete user.password;

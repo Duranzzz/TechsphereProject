@@ -1,7 +1,7 @@
 -- Limpiar tablas (Orden inverso de dependencias)
 TRUNCATE TABLE 
     kardex, garantias, envios, detalles_venta, detalles_compra, ventas, compras, 
-    inventario, reviews, productos, proveedores, empleados, clientes, 
+    inventario, reviews, productos, proveedores, empleados, cliente_direcciones, clientes, 
     users, ubicaciones, metodos_pago, marcas, categorias, direcciones
 CASCADE;
 
@@ -12,6 +12,7 @@ ALTER SEQUENCE marcas_id_seq RESTART WITH 1;
 ALTER SEQUENCE metodos_pago_id_seq RESTART WITH 1;
 ALTER SEQUENCE ubicaciones_id_seq RESTART WITH 1;
 ALTER SEQUENCE clientes_id_seq RESTART WITH 1;
+ALTER SEQUENCE cliente_direcciones_id_seq RESTART WITH 1;
 ALTER SEQUENCE empleados_id_seq RESTART WITH 1;
 ALTER SEQUENCE proveedores_id_seq RESTART WITH 1;
 ALTER SEQUENCE direcciones_id_seq RESTART WITH 1;
@@ -89,11 +90,19 @@ INSERT INTO users (nombre, email, password, rol) VALUES
 ('Cristiano Ronaldo', 'cristianoronaldo@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$placeholder', 'cliente'); -- 6
 
 -- Clientes
-INSERT INTO clientes (nombre, apellido, telefono, tipo, activo, user_id, direccion_id) VALUES 
-('Leonardo', 'Duran', '+59173111977', 'consumidor_final', true, 3, 3),
-('Marcelo', 'Aguilera', '+59161975956', 'consumidor_final', true, 4, 4),
-('Leonel', 'Messi', '1234567890', 'consumidor_final', true, 5, 5),
-('Cristiano', 'Ronaldo', '0987654321', 'consumidor_final', true, 6, 6);
+-- Clientes
+INSERT INTO clientes (nombre, apellido, telefono, tipo, activo, user_id) VALUES 
+('Leonardo', 'Duran', '+59173111977', 'consumidor_final', true, 3),
+('Marcelo', 'Aguilera', '+59161975956', 'consumidor_final', true, 4),
+('Leonel', 'Messi', '1234567890', 'consumidor_final', true, 5),
+('Cristiano', 'Ronaldo', '0987654321', 'consumidor_final', true, 6);
+
+-- Cliente Direcciones (Vincular direcciones existentes a clientes)
+INSERT INTO cliente_direcciones (cliente_id, direccion_id, alias, es_principal) VALUES
+(1, 3, 'Casa', true), -- Leonardo -> Dirección 3
+(2, 4, 'Casa', true), -- Marcelo -> Dirección 4
+(3, 5, 'Casa', true), -- Messi -> Dirección 5
+(4, 6, 'Casa', true); -- CR7 -> Dirección 6
 
 -- Empleados
 INSERT INTO empleados (nombre, apellido, telefono, puesto, activo, user_id, direccion_id) VALUES 

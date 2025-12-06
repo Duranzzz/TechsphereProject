@@ -18,12 +18,14 @@ export default function CheckoutPage() {
 
     // Form and UI States
     const [selectedPayment, setSelectedPayment] = useState('efectivo');
-    const [address, setAddress] = useState({
-        calle: '',
-        ciudad: '',
-        estado: '',
-        pais: 'Bolivia'
-    });
+    const [addresses, setAddresses] = useState([]);
+    const [selectedAddressId, setSelectedAddressId] = useState(null);
+    const [showAddressSelector, setShowAddressSelector] = useState(false);
+
+    // Derived address for display/submission
+    const currentAddress = addresses.find(a => a.link_id === selectedAddressId) || addresses[0] || {
+        calle: '', ciudad: '', estado: '', pais: 'Bolivia'
+    };
 
     // Load Cart and User Data
     useEffect(() => {
@@ -32,24 +34,20 @@ export default function CheckoutPage() {
             setCart(JSON.parse(savedCart));
         }
 
-        // Pre-fill address if available in user profile
-        // Note: Ideally we should fetch the latest profile data here or have it in user context
-        // For now, we'll wait for the user to confirm/edit or we could fetch profile active
         if (user) {
-            // Optional: Fetch full profile to get address if not in user object
-            fetch(`/api/cliente/perfil?user_id=${user.id}`)
+            // Fetch addresses
+            fetch(`/api/cliente/direcciones?user_id=${user.id}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data.profile) {
-                        setAddress({
-                            calle: data.profile.calle || '',
-                            ciudad: data.profile.ciudad || '',
-                            estado: data.profile.estado || '',
-                            pais: data.profile.pais || 'Bolivia'
-                        });
+                    if (Array.isArray(data)) {
+                        setAddresses(data);
+                        // Auto-select principal or first
+                        const principal = data.find(a => a.es_principal);
+                        if (principal) setSelectedAddressId(principal.link_id);
+                        else if (data.length > 0) setSelectedAddressId(data[0].link_id);
                     }
                 })
-                .catch(err => console.error("Error loading address:", err));
+                .catch(err => console.error("Error loading addresses:", err));
         }
     }, [user]);
 
@@ -69,8 +67,8 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (!address.calle || !address.ciudad) {
-            toast.error("Por favor completa la dirección de envío");
+        if (!currentAddress.calle || !currentAddress.ciudad) {
+            toast.error("Por favor selecciona o agrega una dirección de envío en tu perfil");
             return;
         }
 
@@ -82,22 +80,15 @@ export default function CheckoutPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cliente: {
-                        // We send minimal info, backend should link to authenticated user
-                        // But api/ventas might expect specific fields. 
-                        // Plan said: "Remove manual client creation fields (rely on logged-in user)"
-                        // Current API likely expects user data or at least address updates.
-                        // Let's send what we have.
-                        ...user, // userId, etc
+                        ...user,
                         nombre: user.nombre,
                         email: user.email,
-                        // Address from form
-                        direccion: `${address.calle}, ${address.ciudad}, ${address.estado}, ${address.pais}`, // Mapping simply for now
-                        // In a robust system, we would update the user's address in the DB too or create a shipping entry
+                        direccion: `${currentAddress.calle}, ${currentAddress.ciudad}, ${currentAddress.estado}, ${currentAddress.pais}`,
                     },
                     productos: cart.map(item => ({
                         id: item.id,
                         cantidad: item.cantidad,
-                        precio_unitario: item.precio // Backend checks price usually, but good for record
+                        precio_unitario: item.precio
                     })),
                     metodo_pago: selectedPayment
                 })
@@ -187,46 +178,74 @@ export default function CheckoutPage() {
                             </div>
                         </div>
 
-                        {/* Shipping Address */}
+                        {/* Shipping Address Selector */}
                         <div className="bg-white/5 backdrop-blur-lg rounded-3xl p-6 border border-white/5">
-                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <Truck className="h-5 w-5 text-purple-400" />
-                                Dirección de Envío
-                            </h2>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="text-sm text-gray-400 ml-1 mb-2 block">Calle / Avenida</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Ej: Av. Las Palmas #123"
-                                        className="w-full bg-[#0B1120]/50 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
-                                        value={address.calle}
-                                        onChange={e => setAddress({ ...address, calle: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-sm text-gray-400 ml-1 mb-2 block">Ciudad</label>
-                                        <input
-                                            type="text"
-                                            placeholder="Ciudad"
-                                            className="w-full bg-[#0B1120]/50 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
-                                            value={address.ciudad}
-                                            onChange={e => setAddress({ ...address, ciudad: e.target.value })}
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="text-sm text-gray-400 ml-1 mb-2 block">País</label>
-                                        <input
-                                            type="text"
-                                            placeholder="País"
-                                            className="w-full bg-[#0B1120]/50 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:ring-2 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
-                                            value={address.pais}
-                                            onChange={e => setAddress({ ...address, pais: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                    <Truck className="h-5 w-5 text-purple-400" />
+                                    Dirección de Envío
+                                </h2>
+                                {addresses.length > 0 && (
+                                    <button
+                                        onClick={() => setShowAddressSelector(!showAddressSelector)}
+                                        className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                                    >
+                                        Cambiar
+                                    </button>
+                                )}
                             </div>
+
+                            {showAddressSelector && addresses.length > 0 ? (
+                                <div className="space-y-3 mb-4 animate-in fade-in slide-in-from-top-2">
+                                    {addresses.map(addr => (
+                                        <div
+                                            key={addr.link_id}
+                                            onClick={() => { setSelectedAddressId(addr.link_id); setShowAddressSelector(false); }}
+                                            className={`p-4 rounded-xl border cursor-pointer transition-all ${selectedAddressId === addr.link_id
+                                                ? 'bg-blue-600/20 border-blue-500/50'
+                                                : 'bg-[#0B1120]/50 border-white/5 hover:bg-white/5'}`}
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <span className="font-bold text-white text-sm block mb-1">{addr.alias}</span>
+                                                    <span className="text-gray-400 text-sm">{addr.calle}, {addr.ciudad}</span>
+                                                </div>
+                                                {selectedAddressId === addr.link_id && <CheckCircle className="h-5 w-5 text-blue-400" />}
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="pt-2 border-t border-white/10 mt-2">
+                                        <Link to="/tienda/perfil" className="text-sm text-center block w-full text-gray-400 hover:text-white py-2">
+                                            Gestionar direcciones en Perfil
+                                        </Link>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {addresses.length > 0 ? (
+                                        <div className="p-4 bg-[#0B1120]/50 rounded-xl border border-white/5 flex items-start justify-between">
+                                            <div>
+                                                <p className="font-bold text-white mb-1">{currentAddress.alias || 'Dirección'}</p>
+                                                <p className="text-gray-300">{currentAddress.calle}</p>
+                                                <p className="text-sm text-gray-500">{currentAddress.ciudad}, {currentAddress.estado}, {currentAddress.pais}</p>
+                                            </div>
+                                            <div className="h-8 w-8 bg-purple-500/20 rounded-full flex items-center justify-center text-purple-400">
+                                                <MapPin className="h-4 w-4" />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 border border-dashed border-white/10 rounded-xl">
+                                            <p className="text-gray-400 mb-3">No tienes direcciones guardadas</p>
+                                            <Link
+                                                to="/tienda/perfil"
+                                                className="inline-block px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors"
+                                            >
+                                                Agregar Dirección
+                                            </Link>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Payment Method */}
