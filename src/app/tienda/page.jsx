@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/context/CartContext";
 import {
   useQuery,
   QueryClient,
@@ -37,24 +38,13 @@ function TechStore() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedMarca, setSelectedMarca] = useState("");
-  const [cart, setCart] = useState([]);
+  const { logout } = useAuth();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState(null);
-  const { logout } = useAuth();
+  const { cart, addToCart, updateCartQuantity, removeFromCart, getCartTotal, getCartItemCount } = useCart();
 
-  // Load cart from localStorage on mount
-  useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setCart(JSON.parse(savedCart));
-    }
-  }, []);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
 
 
 
@@ -95,46 +85,7 @@ function TechStore() {
   });
 
   // Cart functions
-  const addToCart = (product) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.id === product.id
-            ? { ...item, cantidad: item.cantidad + 1 }
-            : item,
-        );
-      }
-      return [...prevCart, { ...product, cantidad: 1 }];
-    });
-  };
 
-  const updateCartQuantity = (productId, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === productId ? { ...item, cantidad: newQuantity } : item,
-      ),
-    );
-  };
-
-  const removeFromCart = (productId) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== productId));
-  };
-
-  const getCartTotal = () => {
-    return cart.reduce(
-      (total, item) => total + parseFloat(item.precio) * item.cantidad,
-      0,
-    );
-  };
-
-  const getCartItemCount = () => {
-    return cart.reduce((total, item) => total + item.cantidad, 0);
-  };
 
   // WhatsApp integration
   const sendToWhatsApp = () => {

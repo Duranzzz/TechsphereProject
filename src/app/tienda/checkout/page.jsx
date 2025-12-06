@@ -7,12 +7,13 @@ import {
     Package, CheckCircle, AlertCircle, ShoppingBag
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/context/CartContext';
 import { toast } from 'sonner';
 
 export default function CheckoutPage() {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [cart, setCart] = useState([]);
+    const { cart, clearCart, getCartTotal } = useCart();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -28,12 +29,10 @@ export default function CheckoutPage() {
     };
 
     // Load Cart and User Data
-    useEffect(() => {
-        const savedCart = localStorage.getItem('cart');
-        if (savedCart) {
-            setCart(JSON.parse(savedCart));
-        }
 
+
+    // Generic useEffect for user data
+    useEffect(() => {
         if (user) {
             // Fetch addresses
             fetch(`/api/cliente/direcciones?user_id=${user.id}`)
@@ -51,9 +50,7 @@ export default function CheckoutPage() {
         }
     }, [user]);
 
-    const getCartTotal = () => {
-        return cart.reduce((total, item) => total + (parseFloat(item.precio) * item.cantidad), 0);
-    };
+
 
     const handleCheckout = async () => {
         if (!user) {
@@ -98,8 +95,7 @@ export default function CheckoutPage() {
 
             if (res.ok) {
                 setSuccess(true);
-                localStorage.removeItem('cart');
-                setCart([]);
+                clearCart();
                 toast.success("¡Compra realizada con éxito!");
             } else {
                 throw new Error(data.error || 'Error al procesar la compra');

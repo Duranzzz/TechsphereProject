@@ -24,6 +24,7 @@ import './global.css';
 import fetch from '@/__create/fetch';
 // @ts-ignore
 import { AuthProvider } from '@/hooks/useAuth';
+import { CartProvider } from '@/context/CartContext';
 import { useNavigate } from 'react-router';
 import { serializeError } from 'serialize-error';
 import { Toaster } from 'sonner';
@@ -377,7 +378,13 @@ export function Layout({ children }: { children: ReactNode }) {
         <LoadFonts />
       </head>
       <body>
-        <ClientOnly loader={() => children} />
+        <ClientOnly loader={() => (
+          <AuthProvider>
+            <CartProvider>
+              {children}
+            </CartProvider>
+          </AuthProvider>
+        )} />
         <HotReloadIndicator />
         <Toaster position="bottom-right" />
         <ScrollRestoration />
@@ -389,9 +396,5 @@ export function Layout({ children }: { children: ReactNode }) {
 }
 
 export default function App() {
-  return (
-    <AuthProvider>
-      <Outlet />
-    </AuthProvider>
-  );
+  return <Outlet />;
 }
