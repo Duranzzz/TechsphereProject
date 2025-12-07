@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link, useNavigate } from "react-router";
 import { ArrowLeft, User, Lock, Eye, EyeOff, LogIn, Loader2 } from "lucide-react";
+import NebulaBackground from "@/components/NebulaBackground";
 
 export default function LoginPage() {
     const { login } = useAuth();
@@ -13,6 +14,18 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            setMousePosition({
+                x: e.clientX,
+                y: e.clientY,
+            });
+        };
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -39,10 +52,15 @@ export default function LoginPage() {
     return (
         <div className="min-h-screen bg-[#0B1120] text-white flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Effects */}
+            {/* Background Effects */}
+            <NebulaBackground />
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px] animate-pulse delay-700"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                <div
+                    className="absolute inset-0 opacity-100"
+                    style={{
+                        background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(56, 189, 248, 0.25), transparent 70%)`
+                    }}
+                />
             </div>
 
             <div className="w-full max-w-md z-10">

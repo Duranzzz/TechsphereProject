@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import {
     User, Mail, Phone, Lock, ArrowRight, ArrowLeft,
     Loader2, CheckCircle, Smartphone, Eye, EyeOff
 } from "lucide-react";
 import { toast } from "sonner";
+import NebulaBackground from "@/components/NebulaBackground";
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -25,6 +26,18 @@ export default function RegisterPage() {
         estado: "",
         pais: "Bolivia"
     });
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+    useEffect(() => {
+        const handleMouseMove = (e) => {
+            setMousePosition({
+                x: e.clientX,
+                y: e.clientY,
+            });
+        };
+        window.addEventListener("mousemove", handleMouseMove);
+        return () => window.removeEventListener("mousemove", handleMouseMove);
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -78,10 +91,15 @@ export default function RegisterPage() {
     return (
         <div className="min-h-screen bg-[#0B1120] text-white flex items-center justify-center p-4 relative overflow-hidden">
             {/* Background Effects */}
+            {/* Background Effects */}
+            <NebulaBackground />
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] animate-pulse"></div>
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px] animate-pulse delay-1000"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                <div
+                    className="absolute inset-0 opacity-100"
+                    style={{
+                        background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(56, 189, 248, 0.25), transparent 70%)`
+                    }}
+                />
             </div>
 
             <div className="w-full max-w-2xl z-10">

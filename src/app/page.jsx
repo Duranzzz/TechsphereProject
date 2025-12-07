@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { Package, ShieldCheck, Truck, Zap, Star, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useState, useEffect } from "react";
+import NebulaBackground from "@/components/NebulaBackground";
 
 export default function LandingPage() {
     const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -46,16 +47,16 @@ export default function LandingPage() {
         <div className="fixed inset-0 overflow-hidden">
             <div className="min-h-screen bg-[#0B1120] text-white relative overflow-hidden selection:bg-blue-500/30">
                 {/* Dynamic Background */}
+                <NebulaBackground />
                 <div className="fixed inset-0 pointer-events-none">
                     <div
-                        className="absolute inset-0 opacity-30"
+                        className="absolute inset-0 opacity-100" // Increased opacity
                         style={{
-                            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(29, 78, 216, 0.15), transparent 80%)`
+                            background: `radial-gradient(800px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(56, 189, 248, 0.25), transparent 70%)` // Intensified gradient
                         }}
                     />
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 animate-pulse" />
                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2 animate-pulse delay-1000" />
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
                 </div>
 
                 {/* Logo Centered */}

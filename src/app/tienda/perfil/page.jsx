@@ -10,13 +10,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import NebulaBackground from "@/components/NebulaBackground";
+import MouseSpotlight from "@/components/MouseSpotlight";
+
 export default function ProfilePage() {
-    const { user, logout } = useAuth();
+    const { user, logout, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("resumen");
     const [profileData, setProfileData] = useState(null);
     const [stats, setStats] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [profileLoading, setProfileLoading] = useState(true);
 
     // Form states
     const [formData, setFormData] = useState({
@@ -44,6 +47,12 @@ export default function ProfilePage() {
     const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false, deactivate: false });
 
     useEffect(() => {
+        if (!authLoading && !user) {
+            navigate("/login");
+        }
+    }, [user, authLoading, navigate]);
+
+    useEffect(() => {
         if (user?.id) {
             fetchProfile();
             fetchAddresses();
@@ -69,10 +78,10 @@ export default function ProfilePage() {
                     pais: data.profile.pais || "Bolivia"
                 });
             }
-            setLoading(false);
+            setProfileLoading(false);
         } catch (error) {
             console.error("Error fetching profile:", error);
-            setLoading(false);
+            setProfileLoading(false);
         }
     };
 
@@ -247,7 +256,7 @@ export default function ProfilePage() {
         }
     };
 
-    if (loading) return (
+    if (authLoading || profileLoading) return (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -256,16 +265,14 @@ export default function ProfilePage() {
         </div>
     );
 
+
     return (
         <div className="min-h-screen bg-[#0B1120] text-white selection:bg-blue-500/30">
-            {/* Background Effects */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
-            </div>
+            <NebulaBackground />
+            <MouseSpotlight />
 
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-[#0B1120]/80 backdrop-blur-xl border-b border-white/5">
+            <header className="sticky top-0 z-40 bg-[#0B1120]/0.1 backdrop-blur-xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-20">
                         <div className="flex items-center gap-4">

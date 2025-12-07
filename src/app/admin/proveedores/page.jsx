@@ -54,7 +54,7 @@ export default function ProveedoresPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+        <div className="min-h-screen p-6">
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header & Back Button */}
                 <div className="flex flex-col gap-4">

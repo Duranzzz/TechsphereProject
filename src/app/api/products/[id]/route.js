@@ -5,6 +5,7 @@ export async function loader({ request, params }) {
     try {
         const result = await query(
             `SELECT p.*, m.nombre as marca_nombre, c.nombre as categoria_nombre,
+              COALESCE((SELECT SUM(cantidad_disponible) FROM inventario WHERE producto_id = p.id), 0) as stock,
               (SELECT AVG(calificacion) FROM reviews WHERE producto_id = p.id) as rating_promedio,
               (SELECT COUNT(*) FROM reviews WHERE producto_id = p.id) as total_reviews
        FROM productos p

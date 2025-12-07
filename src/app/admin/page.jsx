@@ -45,322 +45,9 @@ import {
   AreaChart,
   Area
 } from "recharts";
+import ProductModal from "@/components/admin/ProductModal";
 
 const queryClient = new QueryClient();
-
-function ProductModal({ isOpen, onClose, product, categorias, marcas }) {
-  const [activeTab, setActiveTab] = useState('details');
-  const [formData, setFormData] = useState({
-    nombre: "",
-    descripcion: "",
-    precio: "",
-    precio_costo: "",
-    stock: "",
-    stock_minimo: "",
-    categoria_id: "",
-    marca_id: "",
-    sku: "",
-    imagen_url: "",
-    activo: true,
-  });
-
-  // Load product data when opening for edit
-  if (isOpen && product && formData.id !== product.id) {
-    setFormData({ ...product, id: product.id });
-  }
-  // Reset when opening for new
-  if (isOpen && !product && formData.id) {
-    setFormData({
-      nombre: "",
-      descripcion: "",
-      precio: "",
-      precio_costo: "",
-      stock: "",
-      stock_minimo: "",
-      categoria_id: "",
-      marca_id: "",
-      sku: "",
-      imagen_url: "",
-      activo: true,
-    });
-    if (activeTab !== 'details') setActiveTab('details');
-  }
-
-  // Fetch Kardex
-  const { data: kardex = [], isLoading: loadingKardex } = useQuery({
-    queryKey: ["kardex", product?.id],
-    queryFn: async () => {
-      if (!product?.id) return [];
-      const res = await fetch(`/api/kardex?producto_id=${product.id}`);
-      if (!res.ok) return [];
-      return res.json();
-    },
-    enabled: !!product?.id && activeTab === 'kardex',
-  });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const method = product ? "PUT" : "POST";
-
-    try {
-      const res = await fetch("/api/productos", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        queryClient.invalidateQueries(["productos"]);
-        onClose();
-      } else {
-        alert("Error al guardar producto");
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error al guardar producto");
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md bg-black/60 p-4">
-      <div className="bg-slate-900/90 backdrop-blur-xl rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-white/10 custom-scrollbar">
-        <div className="p-6 border-b border-white/10 flex justify-between items-center sticky top-0 bg-slate-900/95 z-10 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-              {product ? "Editar Producto" : "Nuevo Producto"}
-            </h2>
-            {product && (
-              <div className="flex bg-slate-800/50 rounded-lg p-1 border border-white/5">
-                <button
-                  onClick={() => setActiveTab('details')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${activeTab === 'details' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Detalles
-                </button>
-                <button
-                  onClick={() => setActiveTab('kardex')}
-                  className={`px-3 py-1 rounded-md text-sm font-medium transition-all ${activeTab === 'kardex' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25' : 'text-gray-400 hover:text-white'}`}
-                >
-                  Historial
-                </button>
-              </div>
-            )}
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white">
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        {activeTab === 'details' ? (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2 space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Nombre</label>
-                <input
-                  required
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all placeholder-gray-500"
-                  value={formData.nombre}
-                  onChange={e => setFormData({ ...formData, nombre: e.target.value })}
-                  placeholder="Nombre del producto"
-                />
-              </div>
-
-              <div className="md:col-span-2 space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Descripción</label>
-                <textarea
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all placeholder-gray-500"
-                  rows="3"
-                  value={formData.descripcion || ""}
-                  onChange={e => setFormData({ ...formData, descripcion: e.target.value })}
-                  placeholder="Descripción detallada..."
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Precio Venta</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    required
-                    type="number"
-                    step="0.01"
-                    className="w-full bg-slate-800/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                    value={formData.precio}
-                    onChange={e => setFormData({ ...formData, precio: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Precio Costo</label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full bg-slate-800/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                    value={formData.precio_costo || ""}
-                    onChange={e => setFormData({ ...formData, precio_costo: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Stock</label>
-                <input
-                  required
-                  type="number"
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                  value={formData.stock}
-                  onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Stock Mínimo</label>
-                <input
-                  type="number"
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                  value={formData.stock_minimo || 5}
-                  onChange={e => setFormData({ ...formData, stock_minimo: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Categoría</label>
-                <select
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all appearance-none"
-                  value={formData.categoria_id || ""}
-                  onChange={e => setFormData({ ...formData, categoria_id: e.target.value })}
-                >
-                  <option value="" className="bg-slate-900">Seleccionar...</option>
-                  {categorias.map(c => <option key={c.id} value={c.id} className="bg-slate-900">{c.nombre}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Marca</label>
-                <select
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all appearance-none"
-                  value={formData.marca_id || ""}
-                  onChange={e => setFormData({ ...formData, marca_id: e.target.value })}
-                >
-                  <option value="" className="bg-slate-900">Seleccionar...</option>
-                  {marcas.map(m => <option key={m.id} value={m.id} className="bg-slate-900">{m.nombre}</option>)}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">SKU</label>
-                <input
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                  value={formData.sku || ""}
-                  onChange={e => setFormData({ ...formData, sku: e.target.value })}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-blue-200/80">Imagen URL</label>
-                <input
-                  className="w-full bg-slate-800/50 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all"
-                  value={formData.imagen_url || ""}
-                  onChange={e => setFormData({ ...formData, imagen_url: e.target.value })}
-                />
-              </div>
-
-              <div className="flex items-center gap-3 pt-4">
-                <label className="text-sm font-medium text-blue-200/80">Estado:</label>
-                <button
-                  type="button"
-                  onClick={() => setFormData({ ...formData, activo: !formData.activo })}
-                  className={`w-12 h-6 rounded-full transition-colors relative ${formData.activo ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                >
-                  <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${formData.activo ? 'left-7' : 'left-1'}`} />
-                </button>
-                <span className={`text-sm font-medium ${formData.activo ? 'text-emerald-400' : 'text-gray-400'}`}>
-                  {formData.activo ? 'Activo' : 'Inactivo'}
-                </span>
-              </div>
-            </div>
-
-            <div className="pt-6 border-t border-white/10 flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 font-medium transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold shadow-lg shadow-purple-500/25 hover:scale-105 transition-all"
-              >
-                Guardar Producto
-              </button>
-            </div>
-          </form>
-        ) : (
-          <div className="p-6">
-            {loadingKardex ? (
-              <div className="text-center py-12 text-blue-200/50 flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                Cargando historial...
-              </div>
-            ) : kardex.length === 0 ? (
-              <div className="text-center py-12 text-blue-200/50 flex flex-col items-center">
-                <History className="h-16 w-16 mb-4 opacity-30" />
-                <p className="text-lg">No hay movimientos registrados</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="border-b border-white/10 text-blue-200/50 text-sm uppercase tracking-wider">
-                      <th className="pb-4 font-semibold">Fecha</th>
-                      <th className="pb-4 font-semibold">Tipo</th>
-                      <th className="pb-4 font-semibold">Referencia</th>
-                      <th className="pb-4 font-semibold text-right">Cantidad</th>
-                      <th className="pb-4 font-semibold text-right">Saldo</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {kardex.map((mov) => (
-                      <tr key={mov.id} className="text-sm hover:bg-white/5 transition-colors">
-                        <td className="py-4 text-blue-100/80">
-                          {new Date(mov.fecha).toLocaleDateString()} <span className="text-gray-500 text-xs">{new Date(mov.fecha).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </td>
-                        <td className="py-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${mov.tipo_movimiento === 'compra' || mov.tipo_movimiento === 'ajuste_entrada'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                            }`}>
-                            {mov.tipo_movimiento}
-                          </span>
-                        </td>
-                        <td className="py-4 text-gray-400">
-                          {mov.observacion || '-'}
-                        </td>
-                        <td className={`py-4 text-right font-bold font-mono ${mov.cantidad > 0 ? 'text-emerald-400' : 'text-rose-400'
-                          }`}>
-                          {mov.cantidad > 0 ? '+' : ''}{mov.cantidad}
-                        </td>
-                        <td className="py-4 text-right font-bold text-white font-mono">
-                          {mov.saldo_actual}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function AdminDashboard() {
   const { user, loading: userLoading, logout } = useAuth();
@@ -491,7 +178,7 @@ function AdminDashboard() {
   const productosStockBajo = productos.filter((p) => p.stock <= p.stock_minimo);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <>
       {/* Header */}
       <header className="bg-white/5 backdrop-blur-xl border-b border-white/10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -656,11 +343,12 @@ function AdminDashboard() {
         </div>
 
         {/* Charts Section */}
+        {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-xl">
             <h3 className="text-xl font-bold text-white mb-6 flex items-center">
               <TrendingUp className="h-6 w-6 mr-2 text-blue-400" />
-              Ventas Recientes
+              Ventas (Últimos 7 Días)
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -716,7 +404,7 @@ function AdminDashboard() {
             </h3>
             <div className="space-y-4">
               {dashboardData?.topProductos
-                ?.slice(0, 5)
+                ?.slice(0, 3)
                 .map((producto, index) => (
                   <div
                     key={index}
@@ -948,7 +636,7 @@ function AdminDashboard() {
           marcas={marcas}
         />
       </div>
-    </div>
+    </>
   );
 }
 

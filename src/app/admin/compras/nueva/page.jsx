@@ -108,7 +108,7 @@ export default function NuevaCompraPage() {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6 flex flex-col gap-6">
+        <div className="min-h-screen p-6 flex flex-col gap-6">
             {/* Header */}
             <div className="flex items-center justify-between shrink-0">
                 <div className="flex flex-col gap-2">
