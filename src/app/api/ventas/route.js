@@ -18,8 +18,10 @@ export async function POST(request) {
     // 1. Handle Client
     let clienteId = null;
 
-    // Check if client exists by email
-    if (cliente.email) {
+    if (cliente.id) {
+      clienteId = cliente.id;
+    } else if (cliente.email) {
+      // Check if client exists by email (Fallback/Legacy)
       const existingClient = await client.query(`
         SELECT c.id 
         FROM clientes c 
@@ -31,36 +33,27 @@ export async function POST(request) {
       }
     }
 
-    // If not found, create new client
+    // If still not found and no ID provided, try to create new client (Legacy/Fallback)
     if (!clienteId) {
-      // Create user first (required by new schema) if we want full auth, but for "guest" checkout or admin-created, 
-      // we might just create a client record linked to a placeholder user or allow null user_id?
-      // Schema says: user_id UUID UNIQUE NOT NULL.
-      // So every client MUST have a user account.
-      // We need to create a user for this client.
+      // ... existing creation logic if needed for other flows ...
+      // For this refactor, we strongly encourage sending ID. 
+      // If we really want to keep the "new client" feature working for other parts, we keep it.
+      // But current requirement implies selection only.
+      // Let's keep the creation logic wrapped in a check just in case, or simplify if the user wants STRICT selection.
+      // "solo se tienen que seleccionar el cliente cuyos datos ya se tienen... y tampoco seleccionar un vendedor"
 
-      // Generate a placeholder password/email if not provided?
-      // If email is missing, we can't create a user easily.
-      // But `cliente.email` might be missing for "Consumidor Final".
-      // If so, we should use a generic "Consumidor Final" client that already exists?
-      // Or create a dummy user.
+      // If we strictly follow "solo se tienen que seleccionar", maybe we should error if no ID?
+      // But existing code supports creation. Let's keep it safe but prioritize ID.
 
-      // For now, let's assume we need an email. If not, fail or generate one.
       const email = cliente.email || `cliente_${Date.now()}@system.local`;
-      // We rely on the hardcoded dummy hash below for this auto-generated user.
-
-      // Let's check if we can reuse a "Guest" user/client?
-      // Or just create a new user.
-
       const userRes = await client.query(`
         INSERT INTO users (nombre, email, password, rol)
         VALUES ($1, $2, $3, 'cliente')
         RETURNING id
-      `, [cliente.nombre, email, '$argon2id$v=19$m=65536,t=3,p=4$dummyhash$dummyhash']); // Dummy hash
+      `, [cliente.nombre, email, '$argon2id$v=19$m=65536,t=3,p=4$dummyhash$dummyhash']);
 
       const userId = userRes.rows[0].id;
 
-      // Create address if provided
       let direccionId = null;
       if (cliente.direccion) {
         const dirRes = await client.query(`

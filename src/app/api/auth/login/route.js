@@ -27,7 +27,9 @@ export async function POST(request) {
                 u.foto_url,
                 c.telefono,
                 c.activo as cliente_activo,
-                e.activo as empleado_activo
+                e.activo as empleado_activo,
+                e.id as empleado_id,
+                e.puesto
              FROM users u
              LEFT JOIN clientes c ON u.id = c.user_id
              LEFT JOIN empleados e ON u.id = e.user_id

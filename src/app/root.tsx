@@ -386,7 +386,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </AuthProvider>
         )} />
         <HotReloadIndicator />
-        <Toaster position="bottom-right" />
+        <Toaster position="top-right" richColors />
         <ScrollRestoration />
         <Scripts />
         <script src="https://kit.fontawesome.com/2c15cc0cc7.js" crossOrigin="anonymous" async />

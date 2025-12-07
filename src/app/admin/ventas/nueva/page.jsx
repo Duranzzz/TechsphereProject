@@ -3,18 +3,19 @@
 import { useState } from "react";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Plus, Trash2, User, ShoppingCart, Save, ArrowLeft, Package, CreditCard, Minus, DollarSign, LogOut } from "lucide-react";
+import { Search, Plus, Trash2, User, ShoppingCart, Save, Package, Minus, LogOut, CreditCard } from "lucide-react";
+import { toast } from "sonner";
 
 const queryClient = new QueryClient();
 
 function POSPage() {
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [clientData, setClientData] = useState({ nombre: "", apellido: "", telefono: "", email: "", direccion: "" });
-    const [selectedEmpleado, setSelectedEmpleado] = useState("");
+    const [clientSearch, setClientSearch] = useState("");
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [selectedMetodoPago, setSelectedMetodoPago] = useState("1"); // Default to Efectivo (1)
     const [loading, setLoading] = useState(false);
-    const { logout } = useAuth();
-    const navigate = (path) => window.location.href = path; // Simple navigation or use useNavigate if router available
+    const { user, logout } = useAuth();
 
     // Fetch products
     const { data: productos = [] } = useQuery({
@@ -26,12 +27,22 @@ function POSPage() {
         }
     });
 
-    // Fetch employees (vendedores)
-    const { data: empleados = [] } = useQuery({
-        queryKey: ["empleados"],
+    // Fetch clients
+    const { data: clientes = [] } = useQuery({
+        queryKey: ["clientes", clientSearch],
         queryFn: async () => {
-            const res = await fetch("/api/empleados");
-            if (!res.ok) throw new Error("Error fetching employees");
+            const res = await fetch(`/api/clientes?search=${clientSearch}`);
+            if (!res.ok) throw new Error("Error fetching clients");
+            return res.json();
+        }
+    });
+
+    // Fetch Payment Methods
+    const { data: metodosPago = [] } = useQuery({
+        queryKey: ["metodos-pago"],
+        queryFn: async () => {
+            const res = await fetch("/api/metodos-pago");
+            if (!res.ok) throw new Error("Error fetching payment methods");
             return res.json();
         }
     });
@@ -58,8 +69,10 @@ function POSPage() {
     const total = cart.reduce((sum, item) => sum + (item.precio * item.cantidad), 0);
 
     const handleSubmit = async () => {
-        if (cart.length === 0) return alert("El carrito está vacío");
-        if (!selectedEmpleado) return alert("Seleccione un vendedor");
+        if (cart.length === 0) return toast.error("El carrito está vacío");
+        if (!selectedClient) return toast.error("Seleccione un cliente");
+        if (!user?.empleado_id) return toast.error("Error: No se identificó al vendedor (Ud).");
+        if (!selectedMetodoPago) return toast.error("Seleccione un método de pago");
 
         setLoading(true);
         try {
@@ -67,25 +80,26 @@ function POSPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    cliente: clientData,
+                    cliente: { id: selectedClient.id },
                     productos: cart.map(item => ({ id: item.id, cantidad: item.cantidad })),
-                    empleado_id: selectedEmpleado,
-                    metodo_pago: 'efectivo'
+                    empleado_id: user.empleado_id,
+                    metodo_pago: selectedMetodoPago
                 })
             });
 
             if (res.ok) {
-                alert("Venta registrada con éxito");
+                toast.success("Venta registrada con éxito");
                 setCart([]);
-                setClientData({ nombre: "", apellido: "", telefono: "", email: "", direccion: "" });
-                setSelectedEmpleado("");
+                setSelectedClient(null);
+                setClientSearch("");
+                setSelectedMetodoPago("1");
             } else {
                 const error = await res.json();
-                alert("Error: " + error.error);
+                toast.error("Error: " + error.error);
             }
         } catch (err) {
             console.error(err);
-            alert("Error al procesar la venta");
+            toast.error("Error al procesar la venta");
         } finally {
             setLoading(false);
         }
@@ -109,7 +123,7 @@ function POSPage() {
                         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                             Nueva Venta
                         </h1>
-                        <p className="text-blue-200/60 text-sm">Punto de Venta</p>
+                        <p className="text-blue-200/60 text-sm">Punto de Venta - Vendedor: {user?.nombre || '...'}</p>
                     </div>
                 </div>
 
@@ -176,7 +190,7 @@ function POSPage() {
                             </h2>
 
                             {/* Cart Items */}
-                            <div className="space-y-3 mb-6 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+                            <div className="space-y-3 mb-6 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                                 {cart.length === 0 ? (
                                     <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/5">
                                         <ShoppingCart className="h-12 w-12 text-gray-500 mx-auto mb-3 opacity-30" />
@@ -221,67 +235,89 @@ function POSPage() {
                                 </div>
                             </div>
 
-                            {/* Client Form */}
+                            {/* Client & Payment Selection */}
                             <div className="space-y-4 border-t border-white/10 pt-6">
                                 <h3 className="font-medium text-blue-200/80 flex items-center gap-2 text-sm uppercase tracking-wider">
-                                    <User className="h-4 w-4" /> Datos del Cliente
+                                    <User className="h-4 w-4" /> Cliente y Pago
                                 </h3>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <input
-                                        placeholder="Nombre"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder-gray-600"
-                                        value={clientData.nombre}
-                                        onChange={e => setClientData({ ...clientData, nombre: e.target.value })}
-                                    />
-                                    <input
-                                        placeholder="Apellido"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder-gray-600"
-                                        value={clientData.apellido}
-                                        onChange={e => setClientData({ ...clientData, apellido: e.target.value })}
-                                    />
-                                    <input
-                                        placeholder="Teléfono"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder-gray-600"
-                                        value={clientData.telefono}
-                                        onChange={e => setClientData({ ...clientData, telefono: e.target.value })}
-                                    />
-                                    <input
-                                        placeholder="Dirección"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder-gray-600"
-                                        value={clientData.direccion}
-                                        onChange={e => setClientData({ ...clientData, direccion: e.target.value })}
-                                    />
-                                </div>
-                                <input
-                                    placeholder="Email (para auto-registro)"
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all placeholder-gray-600"
-                                    value={clientData.email}
-                                    onChange={e => setClientData({ ...clientData, email: e.target.value })}
-                                />
 
-                                {/* Seller Selection */}
-                                <div>
-                                    <label className="block text-xs font-medium text-blue-200/60 mb-1 ml-1">Vendedor</label>
+                                {selectedClient ? (
+                                    <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex justify-between items-center group">
+                                        <div>
+                                            <p className="text-white font-medium">{selectedClient.nombre} {selectedClient.apellido}</p>
+                                            <p className="text-xs text-blue-300/60">{selectedClient.email || 'Sin email'}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => setSelectedClient(null)}
+                                            className="p-2 hover:bg-rose-500/20 text-blue-300 hover:text-rose-400 rounded-lg transition-colors"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="relative group">
+                                        <input
+                                            placeholder="Buscar cliente (Nombre/Tel)..."
+                                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all placeholder-gray-600"
+                                            value={clientSearch}
+                                            onChange={e => setClientSearch(e.target.value)}
+                                        />
+                                        <Search className="absolute right-4 top-3 h-4 w-4 text-gray-500" />
+
+                                        {/* Client Dropdown Results */}
+                                        {clientSearch.length > 0 && clientes.length > 0 && (
+                                            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
+                                                {clientes.map(c => (
+                                                    <button
+                                                        key={c.id}
+                                                        onClick={() => {
+                                                            setSelectedClient(c);
+                                                            setClientSearch("");
+                                                        }}
+                                                        className="w-full text-left p-3 hover:bg-blue-600/20 border-b border-white/5 last:border-0 transition-colors flex justify-between items-center group"
+                                                    >
+                                                        <div>
+                                                            <p className="text-sm font-medium text-white group-hover:text-blue-200">{c.nombre} {c.apellido}</p>
+                                                            <p className="text-xs text-gray-500 group-hover:text-blue-300/50">{c.telefono || c.email}</p>
+                                                        </div>
+                                                        <User className="h-4 w-4 text-gray-600 group-hover:text-blue-400" />
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Payment Method Selection */}
+                                <div className="pt-2">
+                                    <label className="block text-xs font-medium text-blue-200/60 mb-1 ml-1 uppercase tracking-wider flex items-center gap-1">
+                                        <CreditCard className="h-3 w-3" /> Método de Pago
+                                    </label>
                                     <select
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-blue-500/50 outline-none transition-all appearance-none"
-                                        value={selectedEmpleado}
-                                        onChange={e => setSelectedEmpleado(e.target.value)}
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all appearance-none cursor-pointer hover:bg-white/5"
+                                        value={selectedMetodoPago}
+                                        onChange={e => setSelectedMetodoPago(e.target.value)}
                                     >
-                                        <option value="" className="bg-slate-900">Seleccionar Vendedor...</option>
-                                        {empleados.map(emp => (
-                                            <option key={emp.id} value={emp.id} className="bg-slate-900">{emp.nombre} {emp.apellido}</option>
+                                        {metodosPago.map(mp => (
+                                            <option key={mp.id} value={mp.id} className="bg-slate-900 text-white py-2">
+                                                {mp.nombre.charAt(0).toUpperCase() + mp.nombre.slice(1)}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
 
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={loading || cart.length === 0 || !selectedEmpleado}
+                                    disabled={loading || cart.length === 0 || !selectedClient || !user?.empleado_id}
                                     className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                                 >
                                     <Save className="h-5 w-5" />
                                     {loading ? "Procesando..." : "Registrar Venta"}
                                 </button>
+
+                                {!user?.empleado_id && (
+                                    <p className="text-xs text-rose-400 text-center mt-2">Error: Usuario no identificado como vendedor.</p>
+                                )}
                             </div>
                         </div>
                     </div>
