@@ -436,18 +436,22 @@ function TechStore() {
                         <span className="text-2xl font-bold text-green-600">
                           ${parseFloat(producto.precio).toFixed(2)}
                         </span>
-                        {producto.precio_costo && (
-                          <span className="text-sm text-gray-500 ml-2">
-                            SKU: {producto.sku}
-                          </span>
-                        )}
                       </div>
-                      <div className="flex items-center text-yellow-500">
-                        <Star className="h-4 w-4 fill-current" />
-                        <Star className="h-4 w-4 fill-current" />
-                        <Star className="h-4 w-4 fill-current" />
-                        <Star className="h-4 w-4 fill-current" />
-                        <Star className="h-4 w-4" />
+                      <div className="flex items-center space-x-1">
+                        <div className="flex items-center text-yellow-500">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${i < Math.round(parseFloat(producto.rating_promedio || 0))
+                                ? "fill-current"
+                                : "text-gray-300"
+                                }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          ({producto.total_reviews})
+                        </span>
                       </div>
                     </div>
 

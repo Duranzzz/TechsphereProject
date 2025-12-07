@@ -10,11 +10,14 @@ export async function GET(request) {
     let sql = `
       SELECT p.*, c.nombre as categoria_nombre, m.nombre as marca_nombre,
              COALESCE(SUM(i.cantidad_disponible), 0) as stock,
-             COALESCE(MAX(i.cantidad_minima), 0) as stock_minimo
+             COALESCE(MAX(i.cantidad_minima), 0) as stock_minimo,
+             COALESCE(AVG(r.calificacion), 0) as rating_promedio,
+             COUNT(r.id) as total_reviews
       FROM productos p
       LEFT JOIN categorias c ON p.categoria_id = c.id
       LEFT JOIN marcas m ON p.marca_id = m.id
       LEFT JOIN inventario i ON p.id = i.producto_id
+      LEFT JOIN reviews r ON p.id = r.producto_id
       WHERE p.activo = true
     `;
     const params = [];
