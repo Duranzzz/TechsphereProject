@@ -13,11 +13,11 @@ function POSPage() {
     const [searchTerm, setSearchTerm] = useState("");
     const [clientSearch, setClientSearch] = useState("");
     const [selectedClient, setSelectedClient] = useState(null);
-    const [selectedMetodoPago, setSelectedMetodoPago] = useState("1"); // Default to Efectivo (1)
+    const [selectedMetodoPago, setSelectedMetodoPago] = useState("1");
     const [loading, setLoading] = useState(false);
     const { user, logout } = useAuth();
 
-    // Fetch products
+    // Fetch productos (Global)
     const { data: productos = [] } = useQuery({
         queryKey: ["productos", searchTerm],
         queryFn: async () => {
@@ -27,7 +27,7 @@ function POSPage() {
         }
     });
 
-    // Fetch clients
+    // Fetch clientes
     const { data: clientes = [] } = useQuery({
         queryKey: ["clientes", clientSearch],
         queryFn: async () => {
@@ -84,6 +84,7 @@ function POSPage() {
                     productos: cart.map(item => ({ id: item.id, cantidad: item.cantidad })),
                     empleado_id: user.empleado_id,
                     metodo_pago: selectedMetodoPago
+                    // ubicacion_id se maneja autom. en backend
                 })
             });
 
@@ -104,6 +105,9 @@ function POSPage() {
             setLoading(false);
         }
     };
+
+    // ... (El resto del JSX se mantiene igual, pero SIN el bloque "Location Selector")
+    // Para simplificarte, copia el JSX de abajo que ya no tiene el selector:
 
     return (
         <div className="min-h-screen p-6">
@@ -164,7 +168,7 @@ function POSPage() {
                                         <h3 className="font-medium text-white line-clamp-2 min-h-[2.5rem]">{product.nombre}</h3>
                                         <div className="flex justify-between items-end mt-2">
                                             <p className="text-emerald-400 font-bold text-lg">${Number(product.precio).toFixed(2)}</p>
-                                            <p className="text-xs text-blue-200/50">Stock: {product.stock}</p>
+                                            <p className="text-xs text-blue-200/50">Stock Total: {product.stock}</p>
                                         </div>
                                     </div>
                                     <button
@@ -189,7 +193,7 @@ function POSPage() {
                                 Carrito de Venta
                             </h2>
 
-                            {/* Cart Items */}
+                            {/* Cart Items code same as before... */}
                             <div className="space-y-3 mb-6 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
                                 {cart.length === 0 ? (
                                     <div className="text-center py-12 border border-dashed border-white/10 rounded-2xl bg-white/5">
@@ -235,7 +239,7 @@ function POSPage() {
                                 </div>
                             </div>
 
-                            {/* Client & Payment Selection */}
+                            {/* Client & Payment Section */}
                             <div className="space-y-4 border-t border-white/10 pt-6">
                                 <h3 className="font-medium text-blue-200/80 flex items-center gap-2 text-sm uppercase tracking-wider">
                                     <User className="h-4 w-4" /> Cliente y Pago
@@ -264,7 +268,6 @@ function POSPage() {
                                         />
                                         <Search className="absolute right-4 top-3 h-4 w-4 text-gray-500" />
 
-                                        {/* Client Dropdown Results */}
                                         {clientSearch.length > 0 && clientes.length > 0 && (
                                             <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
                                                 {clientes.map(c => (
@@ -288,7 +291,6 @@ function POSPage() {
                                     </div>
                                 )}
 
-                                {/* Payment Method Selection */}
                                 <div className="pt-2">
                                     <label className="block text-xs font-medium text-blue-200/60 mb-1 ml-1 uppercase tracking-wider flex items-center gap-1">
                                         <CreditCard className="h-3 w-3" /> Método de Pago

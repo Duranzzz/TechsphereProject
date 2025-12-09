@@ -6,6 +6,8 @@ export async function GET(request) {
     const categoria = searchParams.get("categoria");
     const marca = searchParams.get("marca");
     const search = searchParams.get("search");
+    const ubicacion_id = searchParams.get("ubicacion_id");
+    const params = [];
 
     let sql = `
       SELECT p.*, c.nombre as categoria_nombre, m.nombre as marca_nombre,
@@ -16,12 +18,16 @@ export async function GET(request) {
       FROM productos p
       LEFT JOIN categorias c ON p.categoria_id = c.id
       LEFT JOIN marcas m ON p.marca_id = m.id
-      LEFT JOIN inventario i ON p.id = i.producto_id
+      LEFT JOIN inventario i ON p.id = i.producto_id ${ubicacion_id ? `AND i.ubicacion_id = $${params.length + 1}` : ''}
       LEFT JOIN reviews r ON p.id = r.producto_id
       WHERE p.activo = true
     `;
-    const params = [];
-    let paramCount = 0;
+
+    if (ubicacion_id) {
+      params.push(ubicacion_id);
+    }
+
+    let paramCount = params.length;
 
     if (categoria) {
       paramCount++;
@@ -41,7 +47,7 @@ export async function GET(request) {
       params.push(`%${search}%`);
     }
 
-    sql += ` GROUP BY p.id, c.nombre, m.nombre ORDER BY p.nombre`;
+    sql += ` GROUP BY p.id, c.nombre, m.nombre ORDER BY (COALESCE(SUM(i.cantidad_disponible), 0) > 0) DESC, p.nombre ASC`;
 
     const result = await query(sql, params);
     return Response.json(result.rows);

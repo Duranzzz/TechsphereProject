@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/context/CartContext';
 import StarRating from '@/components/StarRating';
 import NebulaBackground from '@/components/NebulaBackground';
 import MouseSpotlight from '@/components/MouseSpotlight';
@@ -11,16 +12,18 @@ export default function ProductDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { addToCart } = useCart();
+
     const [product, setProduct] = useState(null);
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newReview, setNewReview] = useState({ calificacion: 5, comentario: '' });
     const [submittingReview, setSubmittingReview] = useState(false);
-    const [selectedImage, setSelectedImage] = useState(0);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+                // Ya no pasamos ubicacion_id, la API sumará todo el stock global
                 const [prodRes, revRes] = await Promise.all([
                     fetch(`/api/products/${id}`),
                     fetch(`/api/products/${id}/reviews`)
@@ -40,23 +43,9 @@ export default function ProductDetail() {
 
     const handleAddToCart = () => {
         if (!product) return;
-
-        const savedCart = localStorage.getItem('cart');
-        const cart = savedCart ? JSON.parse(savedCart) : [];
-        const existingItem = cart.find((item) => item.id === product.id);
-
-        let newCart;
-        if (existingItem) {
-            newCart = cart.map((item) =>
-                item.id === product.id ? { ...item, cantidad: item.cantidad + 1 } : item
-            );
-        } else {
-            newCart = [...cart, { ...product, cantidad: 1 }];
-        }
-
-        localStorage.setItem('cart', JSON.stringify(newCart));
-        toast.success('Producto agregado al carrito');
-        window.dispatchEvent(new Event('storage'));
+        addToCart(product); // Usamos la función del contexto que ya maneja todo
+        // El toast ya lo suele manejar el context, si no, descomenta la siguiente línea:
+        // toast.success('Producto agregado al carrito');
     };
 
     const handleSubmitReview = async (e) => {
@@ -150,7 +139,7 @@ export default function ProductDetail() {
                                 <span className="bg-blue-600/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-blue-600/20">
                                     Nuevo
                                 </span>
-                                {product.stock < 5 && product.stock > 0 && (
+                                {parseInt(product.stock) < 5 && parseInt(product.stock) > 0 && (
                                     <span className="bg-orange-500/90 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-orange-500/20">
                                         ¡Pocas unidades!
                                     </span>

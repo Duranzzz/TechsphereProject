@@ -31,7 +31,8 @@ CREATE TABLE public.categorias (
     id SERIAL PRIMARY KEY,
     nombre character varying(100) NOT NULL UNIQUE,
     descripcion text,
-    activa boolean DEFAULT true
+    activa boolean DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.categorias OWNER TO neondb_owner;
 
@@ -39,14 +40,16 @@ CREATE TABLE public.marcas (
     id SERIAL PRIMARY KEY,
     nombre character varying(100) NOT NULL UNIQUE,
     pais_origen character varying(50),
-    sitio_web character varying(255)
+    sitio_web character varying(255),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.marcas OWNER TO neondb_owner;
 
 CREATE TABLE public.metodos_pago (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
-    activo BOOLEAN DEFAULT TRUE
+    activo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.metodos_pago OWNER TO neondb_owner;
 
@@ -108,7 +111,7 @@ CREATE TABLE public.empleados (
     apellido character varying(100),
     telefono character varying(20),
     puesto character varying(20) DEFAULT 'vendedor' CHECK (puesto IN ('vendedor', 'gerente', 'administrativo')),
-    fecha_contratacion date,
+    fecha_contratacion date DEFAULT CURRENT_DATE, -- AUTOMÁTICA: se establece al día de creación del registro
     activo boolean DEFAULT true,
     user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
     direccion_id INTEGER REFERENCES public.direcciones(id)
@@ -123,7 +126,8 @@ CREATE TABLE public.proveedores (
     email character varying(255), -- Email de contacto del proveedor (puede ser diferente al login)
     activo boolean DEFAULT true,
     user_id INTEGER REFERENCES public.users(id) ON DELETE SET NULL, -- Opcional, si el proveedor tiene acceso
-    direccion_id INTEGER REFERENCES public.direcciones(id)
+    direccion_id INTEGER REFERENCES public.direcciones(id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.proveedores OWNER TO neondb_owner;
 
@@ -178,6 +182,7 @@ ALTER TABLE public.reviews OWNER TO neondb_owner;
 CREATE TABLE public.compras (
     id SERIAL PRIMARY KEY,
     proveedor_id integer REFERENCES public.proveedores(id),
+    ubicacion_id integer NOT NULL REFERENCES public.ubicaciones(id),
     fecha_compra timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     numero_factura character varying(100),
     total numeric(10,2) NOT NULL,
@@ -192,7 +197,8 @@ CREATE TABLE public.detalles_compra (
     producto_id integer REFERENCES public.productos(id),
     cantidad integer NOT NULL,
     precio_unitario numeric(10,2) NOT NULL,
-    subtotal numeric(10,2) GENERATED ALWAYS AS ((cantidad::numeric * precio_unitario)) STORED
+    subtotal numeric(10,2) GENERATED ALWAYS AS ((cantidad::numeric * precio_unitario)) STORED,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.detalles_compra OWNER TO neondb_owner;
 
@@ -214,10 +220,12 @@ CREATE TABLE public.detalles_venta (
     id SERIAL PRIMARY KEY,
     venta_id integer REFERENCES public.ventas(id) ON DELETE CASCADE,
     producto_id integer REFERENCES public.productos(id),
+    ubicacion_id integer REFERENCES public.ubicaciones(id),
     cantidad integer NOT NULL,
     precio_unitario numeric(10,2) NOT NULL,
     descuento numeric(10,2) DEFAULT 0,
-    subtotal numeric(10,2) GENERATED ALWAYS AS ((cantidad::numeric * precio_unitario) - descuento) STORED
+    subtotal numeric(10,2) GENERATED ALWAYS AS ((cantidad::numeric * precio_unitario) - descuento) STORED,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.detalles_venta OWNER TO neondb_owner;
 
@@ -241,7 +249,8 @@ CREATE TABLE public.garantias (
     fecha_inicio DATE NOT NULL DEFAULT CURRENT_DATE,
     fecha_fin DATE NOT NULL,
     estado VARCHAR(20) DEFAULT 'activa' CHECK (estado IN ('activa', 'expirada', 'utilizada', 'cancelada')),
-    detalles TEXT
+    detalles TEXT,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.garantias OWNER TO neondb_owner;
 
@@ -273,6 +282,8 @@ CREATE INDEX idx_ventas_fecha ON public.ventas(fecha);
 CREATE INDEX idx_kardex_producto_fecha ON public.kardex(producto_id, fecha);
 CREATE INDEX idx_reviews_producto ON public.reviews(producto_id);
 CREATE INDEX idx_users_email ON public.users(email);
+CREATE INDEX idx_compras_ubicacion ON public.compras(ubicacion_id);
+CREATE INDEX idx_detalles_venta_ubicacion ON public.detalles_venta(ubicacion_id);
 
 -- ========================================
 -- 7. CONFIGURACIÓN FINAL

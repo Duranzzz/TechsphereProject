@@ -1,44 +1,17 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/context/CartContext";
 import NebulaBackground from "@/components/NebulaBackground";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  useQuery,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
-import {
-  ShoppingCart,
-  Package,
-  Search,
-  Filter,
-  Plus,
-  Minus,
-  Star,
-  Heart,
-  Eye,
-  Smartphone,
-  Laptop,
-  Gamepad2,
-  Headphones,
-  Cable,
-  Menu,
-  X,
-  LogOut,
-  User,
-  Grid,
-  Sparkles,
-  ArrowRight
+  MapPin, ChevronDown, Package, Search, User, ShoppingCart, Menu,
+  Grid, Sparkles, Heart, Eye, Plus, Minus, X, Laptop, Smartphone,
+  Headphones, Watch, Camera, Gamepad, Star
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-
-const queryClient = new QueryClient();
-
-// Three.js Background Component
-
 
 export default function TechStore() {
   const navigate = useNavigate();
@@ -50,7 +23,8 @@ export default function TechStore() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  const { cart, addToCart, updateCartQuantity, removeFromCart, getCartTotal, getCartItemCount } = useCart();
+  const { cart, addToCart, updateCartQuantity, removeFromCart, getCartTotal, getCartItemCount, clearCart } = useCart();
+
 
   // Mouse move effect for background
   useEffect(() => {
@@ -64,10 +38,31 @@ export default function TechStore() {
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
+  // Fetch Categories
+  const { data: categorias = [] } = useQuery({
+    queryKey: ["categorias"],
+    queryFn: async () => {
+      const res = await fetch("/api/categorias");
+      if (!res.ok) throw new Error("Error fetching categories");
+      return res.json();
+    }
+  });
+
+  // Fetch Brands
+  const { data: marcas = [] } = useQuery({
+    queryKey: ["marcas"],
+    queryFn: async () => {
+      const res = await fetch("/api/marcas");
+      if (!res.ok) throw new Error("Error fetching brands");
+      return res.json();
+    }
+  });
+
   // Fetch productos
   const { data: productos = [], isLoading: productosLoading } = useQuery({
     queryKey: ["productos", searchTerm, selectedCategory, selectedMarca],
     queryFn: async () => {
+
       const params = new URLSearchParams();
       if (searchTerm) params.append("search", searchTerm);
       if (selectedCategory) params.append("categoria", selectedCategory);
@@ -79,67 +74,39 @@ export default function TechStore() {
     },
   });
 
-  // Fetch categorias
-  const { data: categorias = [] } = useQuery({
-    queryKey: ["categorias"],
-    queryFn: async () => {
-      const response = await fetch("/api/categorias");
-      if (!response.ok) throw new Error("Error fetching categorias");
-      return response.json();
-    },
-  });
-
-  // Fetch marcas
-  const { data: marcas = [] } = useQuery({
-    queryKey: ["marcas"],
-    queryFn: async () => {
-      const response = await fetch("/api/marcas");
-      if (!response.ok) throw new Error("Error fetching marcas");
-      return response.json();
-    },
-  });
-
-  // Category icons helper
+  // Helpers
   const getCategoryIcon = (categoryName) => {
-    switch (categoryName?.toLowerCase()) {
-      case "smartphones": return <Smartphone className="h-5 w-5" />;
-      case "laptops": return <Laptop className="h-5 w-5" />;
-      case "gaming": return <Gamepad2 className="h-5 w-5" />;
-      case "audio": return <Headphones className="h-5 w-5" />;
-      case "accesorios": return <Cable className="h-5 w-5" />;
-      default: return <Package className="h-5 w-5" />;
-    }
+    const name = categoryName?.toLowerCase() || "";
+    if (name.includes("laptop") || name.includes("portatil")) return <Laptop className="h-4 w-4" />;
+    if (name.includes("movil") || name.includes("phone")) return <Smartphone className="h-4 w-4" />;
+    if (name.includes("audio") || name.includes("auricul")) return <Headphones className="h-4 w-4" />;
+    if (name.includes("reloj") || name.includes("watch")) return <Watch className="h-4 w-4" />;
+    if (name.includes("camara") || name.includes("foto")) return <Camera className="h-4 w-4" />;
+    if (name.includes("game") || name.includes("juego")) return <Gamepad className="h-4 w-4" />;
+    return <Package className="h-4 w-4" />;
   };
 
+  const renderStars = (rating) => {
+    return [...Array(5)].map((_, i) => (
+      <Star
+        key={i}
+        className={`h-3 w-3 ${i < Math.round(rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-600"}`}
+      />
+    ));
+  };
+
+  // Animations
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.05 }
+      transition: { staggerChildren: 0.1 }
     }
   };
 
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: { type: "spring", stiffness: 100 }
-    }
-  };
-
-  const renderStars = (rating) => {
-    const stars = [];
-    const ratingValue = parseFloat(rating || 0);
-    for (let i = 0; i < 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          className={`h-3.5 w-3.5 ${i < Math.round(ratingValue) ? "text-yellow-400 fill-yellow-400" : "text-gray-600"}`}
-        />
-      );
-    }
-    return stars;
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
   };
 
   return (
@@ -164,17 +131,15 @@ export default function TechStore() {
         {/* Navigation Bar */}
         <header className="py-6 flex flex-col md:flex-row gap-6 items-center justify-between sticky top-0 z-50 pointer-events-none">
           {/* Logo Area */}
-          <div className="pointer-events-auto bg-[#0F1629]/60 backdrop-blur-xl border border-white/10 p-3 rounded-2xl shadow-xl flex items-center gap-3">
-            <div className="bg-gradient-to-tr from-blue-600 to-purple-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
-              <Package className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent pr-2">
-              TechSphere
-            </span>
+          <div className="bg-gradient-to-tr from-blue-600 to-purple-600 p-2 rounded-xl shadow-lg shadow-blue-500/20">
+            <Package className="h-6 w-6 text-white" />
           </div>
+          <span className="text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent pr-2">
+            TechSphere
+          </span>
 
           {/* Desktop Search Center */}
-          <div className="hidden md:flex flex-1 max-w-xl px-8 pointer-events-auto">
+          <div className="hidden md:flex flex-1 max-w-lg px-4 pointer-events-auto">
             <div className="relative w-full group">
               <div className="absolute inset-0 bg-blue-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -190,7 +155,6 @@ export default function TechStore() {
 
           {/* Actions Right */}
           <div className="flex items-center gap-3 pointer-events-auto">
-
             <Link to="/tienda/perfil" className="group">
               <div className="relative overflow-hidden bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 p-3 rounded-xl backdrop-blur-md transition-all shadow-lg hover:shadow-purple-500/20 text-purple-300 hover:text-white">
                 <User className="h-5 w-5" />
@@ -209,9 +173,6 @@ export default function TechStore() {
               )}
             </button>
 
-
-
-            {/* Mobile Menu Button */}
             <button onClick={() => setIsMobileMenuOpen(true)} className="md:hidden p-3 bg-white/5 border border-white/10 rounded-xl">
               <Menu className="h-5 w-5" />
             </button>

@@ -21,24 +21,23 @@ export async function GET() {
 export async function POST(request) {
     const client = await pool.connect();
     try {
-        const { proveedor_id, numero_factura, fecha_compra, items } = await request.json();
+        const { proveedor_id, ubicacion_id, numero_factura, fecha_compra, items } = await request.json();
 
-        if (!proveedor_id || !items || items.length === 0) {
+        if (!proveedor_id || !ubicacion_id || !items || items.length === 0) {
             return Response.json({ error: 'Faltan datos obligatorios' }, { status: 400 });
         }
 
         // Calculate total
         const total = items.reduce((sum, item) => sum + (item.cantidad * item.precio_unitario), 0);
-        const locationId = 1; // Default location
 
         await client.query('BEGIN');
 
         // 1. Insert Header
         const compraRes = await client.query(
-            `INSERT INTO compras (proveedor_id, numero_factura, fecha_compra, total, estado)
-             VALUES ($1, $2, $3, $4, 'completada')
+            `INSERT INTO compras (proveedor_id, ubicacion_id, numero_factura, fecha_compra, total, estado)
+             VALUES ($1, $2, $3, $4, $5, 'completada')
              RETURNING id`,
-            [proveedor_id, numero_factura, fecha_compra || new Date(), total]
+            [proveedor_id, ubicacion_id, numero_factura, fecha_compra || new Date(), total]
         );
         const compraId = compraRes.rows[0].id;
 
@@ -49,17 +48,12 @@ export async function POST(request) {
             // Get current stock from Inventario
             const invRes = await client.query(
                 'SELECT cantidad_disponible FROM inventario WHERE producto_id = $1 AND ubicacion_id = $2',
-                [producto_id, locationId]
+                [producto_id, ubicacion_id]
             );
 
             let saldoAnterior = 0;
             if (invRes.rows.length > 0) {
                 saldoAnterior = invRes.rows[0].cantidad_disponible;
-            } else {
-                // If no inventory record, create one? Or assume 0.
-                // We should probably ensure inventory record exists.
-                // But if it doesn't, we can insert.
-                // For now assume 0 if not found, but we will upsert later.
             }
 
             const saldoActual = saldoAnterior + parseInt(cantidad);
@@ -71,16 +65,16 @@ export async function POST(request) {
                 [compraId, producto_id, cantidad, precio_unitario]
             );
 
-            // Update Stock in Inventario
-            // Upsert logic
+            // Update Stock in Inventario (Upsert)
+            // If conflict (product exists in location), update. If not, insert.
             await client.query(`
                 INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible)
                 VALUES ($1, $2, $3)
                 ON CONFLICT (producto_id, ubicacion_id) 
                 DO UPDATE SET cantidad_disponible = inventario.cantidad_disponible + $3, ultima_actualizacion = CURRENT_TIMESTAMP
-            `, [producto_id, locationId, cantidad]);
+            `, [producto_id, ubicacion_id, cantidad]);
 
-            // Update Cost Price in Productos
+            // Update Cost Price in Productos (Global update for reference)
             await client.query(
                 `UPDATE productos SET precio_costo = $1, fecha_actualizacion = CURRENT_TIMESTAMP
                  WHERE id = $2`,
@@ -91,7 +85,7 @@ export async function POST(request) {
             await client.query(
                 `INSERT INTO kardex (producto_id, ubicacion_id, fecha, tipo_movimiento, cantidad, saldo_anterior, saldo_actual, referencia_tabla, referencia_id, observacion)
                  VALUES ($1, $2, CURRENT_TIMESTAMP, 'compra', $3, $4, $5, 'compras', $6, $7)`,
-                [producto_id, locationId, cantidad, saldoAnterior, saldoActual, compraId, `Compra Fac: ${numero_factura}`]
+                [producto_id, ubicacion_id, cantidad, saldoAnterior, saldoActual, compraId, `Compra Fac: ${numero_factura}`]
             );
         }
 

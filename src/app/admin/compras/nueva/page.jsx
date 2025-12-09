@@ -12,9 +12,11 @@ export default function NuevaCompraPage() {
     // Data
     const [proveedores, setProveedores] = useState([]);
     const [productos, setProductos] = useState([]);
+    const [ubicaciones, setUbicaciones] = useState([]);
 
     // Form State
     const [proveedorId, setProveedorId] = useState('');
+    const [ubicacionId, setUbicacionId] = useState('');
     const [numeroFactura, setNumeroFactura] = useState('');
     const [fechaCompra, setFechaCompra] = useState(new Date().toISOString().split('T')[0]);
     const [cart, setCart] = useState([]);
@@ -26,13 +28,15 @@ export default function NuevaCompraPage() {
 
     const fetchData = async () => {
         try {
-            const [provRes, prodRes] = await Promise.all([
+            const [provRes, prodRes, ubRes] = await Promise.all([
                 fetch('/api/proveedores'),
-                fetch('/api/productos')
+                fetch('/api/productos'),
+                fetch('/api/ubicaciones')
             ]);
 
             if (provRes.ok) setProveedores(await provRes.json());
             if (prodRes.ok) setProductos(await prodRes.json());
+            if (ubRes.ok) setUbicaciones(await ubRes.json());
         } catch (err) {
             console.error('Error loading data:', err);
             setError('Error al cargar datos necesarios');
@@ -73,6 +77,7 @@ export default function NuevaCompraPage() {
 
     const handleSubmit = async () => {
         if (!proveedorId) return setError('Selecciona un proveedor');
+        if (!ubicacionId) return setError('Selecciona una ubicación de destino');
         if (cart.length === 0) return setError('Agrega al menos un producto');
 
         setLoading(true);
@@ -84,6 +89,7 @@ export default function NuevaCompraPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     proveedor_id: proveedorId,
+                    ubicacion_id: ubicacionId,
                     numero_factura: numeroFactura,
                     fecha_compra: fechaCompra,
                     items: cart
@@ -175,18 +181,22 @@ export default function NuevaCompraPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-blue-200/80">Fecha</label>
+                                <label className="text-sm font-medium text-blue-200/80">Destino (Ubicación)</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400/50 h-4 w-4" />
-                                    <input
-                                        type="date"
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                        value={fechaCompra}
-                                        onChange={(e) => setFechaCompra(e.target.value)}
-                                    />
+                                    <ShoppingCart className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400/50 h-4 w-4" />
+                                    <select
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-white focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none"
+                                        value={ubicacionId}
+                                        onChange={(e) => setUbicacionId(e.target.value)}
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        {ubicaciones.map(u => (
+                                            <option key={u.id} value={u.id}>{u.nombre}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
-                            <div className="col-span-2 space-y-2">
+                            <div className="space-y-2">
                                 <label className="text-sm font-medium text-blue-200/80">Nº Factura / Referencia</label>
                                 <div className="relative">
                                     <FileText className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400/50 h-4 w-4" />

@@ -385,7 +385,7 @@ function AdminDashboard() {
                     itemStyle={{ color: "#60a5fa" }}
                   />
                   <Area
-                    type="monotone"
+                    type="linear"
                     dataKey="ventas"
                     stroke="#60a5fa"
                     strokeWidth={3}

@@ -26,6 +26,7 @@ import fetch from '@/__create/fetch';
 import { AuthProvider } from '@/hooks/useAuth';
 import { CartProvider } from '@/context/CartContext';
 import { useNavigate } from 'react-router';
+// @ts-ignore
 import { serializeError } from 'serialize-error';
 import { Toaster } from 'sonner';
 // @ts-ignore
@@ -386,7 +387,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </AuthProvider>
         )} />
         <HotReloadIndicator />
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" richColors />
         <ScrollRestoration />
         <Scripts />
         <script src="https://kit.fontawesome.com/2c15cc0cc7.js" crossOrigin="anonymous" async />

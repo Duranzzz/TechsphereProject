@@ -28,9 +28,6 @@ export default function CheckoutPage() {
         calle: '', ciudad: '', estado: '', pais: 'Bolivia'
     };
 
-    // Load Cart and User Data
-
-
     // Generic useEffect for user data
     useEffect(() => {
         if (user) {
@@ -49,8 +46,6 @@ export default function CheckoutPage() {
                 .catch(err => console.error("Error loading addresses:", err));
         }
     }, [user]);
-
-
 
     const handleCheckout = async () => {
         if (!user) {
@@ -77,7 +72,6 @@ export default function CheckoutPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cliente: {
-                        ...user,
                         nombre: user.nombre,
                         email: user.email,
                         direccion: `${currentAddress.calle}, ${currentAddress.ciudad}, ${currentAddress.estado}, ${currentAddress.pais}`,
