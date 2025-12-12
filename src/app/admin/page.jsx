@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Link } from "react-router";
 import {
   useQuery,
   useQueryClient,
@@ -175,7 +176,6 @@ function AdminDashboard() {
     };
   });
 
-  const productosStockBajo = productos.filter((p) => p.stock <= p.stock_minimo);
 
   return (
     <>
@@ -307,20 +307,27 @@ function AdminDashboard() {
             </div>
           </div>
 
-          <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
+          <Link
+            to="/admin/stock-bajo"
+            className="block bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:bg-white/10 hover:border-rose-500/30 transition-all duration-300 group cursor-pointer"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-200/60 text-sm font-medium mb-1">Stock Bajo</p>
                 <p className="text-3xl font-bold text-rose-400 mb-1">
                   {dashboardData?.productosStock || 0}
                 </p>
-                <p className="text-sm text-blue-200/40">Productos</p>
+                <p className="text-sm text-blue-200/40">Ubicaciones en riesgo</p>
               </div>
               <div className="bg-rose-500/20 p-3 rounded-xl group-hover:scale-110 transition-transform">
                 <AlertTriangle className="h-8 w-8 text-rose-400" />
               </div>
             </div>
-          </div>
+            <div className="mt-3 flex items-center text-rose-300 text-sm opacity-0 group-hover:opacity-100 transition-opacity">
+              <ArrowUpRight className="h-4 w-4 mr-1" />
+              Ver detalles
+            </div>
+          </Link>
 
           <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:bg-white/10 transition-all duration-300 group">
             <div className="flex items-center justify-between">
@@ -504,7 +511,6 @@ function AdminDashboard() {
                   <th className="px-6 py-4 text-left font-semibold">Marca</th>
                   <th className="px-6 py-4 text-left font-semibold">Precio</th>
                   <th className="px-6 py-4 text-left font-semibold">Stock</th>
-                  <th className="px-6 py-4 text-left font-semibold">Estado</th>
                   <th className="px-6 py-4 text-right font-semibold">Acciones</th>
                 </tr>
               </thead>
@@ -521,6 +527,11 @@ function AdminDashboard() {
                             src={producto.imagen_url}
                             alt={producto.nombre}
                             className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '';
+                              e.target.style.display = 'none';
+                            }}
                           />
                         ) : (
                           <Package className="h-6 w-6 text-gray-600" />
@@ -550,25 +561,13 @@ function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`font-semibold ${producto.stock <= producto.stock_minimo
+                        className={`font-semibold ${producto.stock <= producto.cantidad_minima
                           ? "text-rose-400"
                           : "text-white"
                           }`}
                       >
                         {producto.stock}
                       </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {producto.stock <= producto.stock_minimo ? (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Stock Bajo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                          En Stock
-                        </span>
-                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -595,38 +594,7 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* Stock Alerts */}
-        {productosStockBajo.length > 0 && (
-          <div className="mt-8 bg-rose-500/10 border border-rose-500/20 rounded-2xl p-6 backdrop-blur-sm">
-            <h3 className="text-lg font-bold text-rose-400 mb-4 flex items-center">
-              <AlertTriangle className="h-6 w-6 mr-2" />
-              Alertas de Stock Bajo
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {productosStockBajo.map((producto) => (
-                <div
-                  key={producto.id}
-                  className="bg-slate-900/80 rounded-xl p-4 border border-rose-500/20 shadow-lg"
-                >
-                  <div className="font-semibold text-white">
-                    {producto.nombre}
-                  </div>
-                  <div className="text-sm text-gray-400">
-                    {producto.categoria_nombre}
-                  </div>
-                  <div className="mt-3 flex justify-between items-center bg-rose-500/5 p-2 rounded-lg">
-                    <span className="text-rose-400 font-bold">
-                      Stock: {producto.stock}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      Mín: {producto.stock_minimo}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         <ProductModal
           isOpen={isProductModalOpen}

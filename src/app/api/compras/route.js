@@ -45,47 +45,14 @@ export async function POST(request) {
         for (const item of items) {
             const { producto_id, cantidad, precio_unitario } = item;
 
-            // Get current stock from Inventario
-            const invRes = await client.query(
-                'SELECT cantidad_disponible FROM inventario WHERE producto_id = $1 AND ubicacion_id = $2',
-                [producto_id, ubicacion_id]
-            );
-
-            let saldoAnterior = 0;
-            if (invRes.rows.length > 0) {
-                saldoAnterior = invRes.rows[0].cantidad_disponible;
-            }
-
-            const saldoActual = saldoAnterior + parseInt(cantidad);
-
-            // Insert Detail
+            // Insert Detail - El trigger sumar_stock_compra() se encarga de:
+            // - Actualizar/crear inventario
+            // - Actualizar precio_costo del producto  
+            // - Registrar en kardex (vía trigger procesar_kardex_automatico)
             await client.query(
                 `INSERT INTO detalles_compra (compra_id, producto_id, cantidad, precio_unitario)
                  VALUES ($1, $2, $3, $4)`,
                 [compraId, producto_id, cantidad, precio_unitario]
-            );
-
-            // Update Stock in Inventario (Upsert)
-            // If conflict (product exists in location), update. If not, insert.
-            await client.query(`
-                INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible)
-                VALUES ($1, $2, $3)
-                ON CONFLICT (producto_id, ubicacion_id) 
-                DO UPDATE SET cantidad_disponible = inventario.cantidad_disponible + $3, ultima_actualizacion = CURRENT_TIMESTAMP
-            `, [producto_id, ubicacion_id, cantidad]);
-
-            // Update Cost Price in Productos (Global update for reference)
-            await client.query(
-                `UPDATE productos SET precio_costo = $1, fecha_actualizacion = CURRENT_TIMESTAMP
-                 WHERE id = $2`,
-                [precio_unitario, producto_id]
-            );
-
-            // Insert Kardex
-            await client.query(
-                `INSERT INTO kardex (producto_id, ubicacion_id, fecha, tipo_movimiento, cantidad, saldo_anterior, saldo_actual, referencia_tabla, referencia_id, observacion)
-                 VALUES ($1, $2, CURRENT_TIMESTAMP, 'compra', $3, $4, $5, 'compras', $6, $7)`,
-                [producto_id, ubicacion_id, cantidad, saldoAnterior, saldoActual, compraId, `Compra Fac: ${numero_factura}`]
             );
         }
 

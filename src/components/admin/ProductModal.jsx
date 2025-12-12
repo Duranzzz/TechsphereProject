@@ -11,8 +11,9 @@ export default function ProductModal({ isOpen, onClose, product, categorias, mar
         descripcion: "",
         precio: "",
         precio_costo: "",
-        stock: "",
-        stock_minimo: "",
+        stock: "", // Unused in UI now, but kept in state if needed or we can remove. I will remove it from initial state.
+        cantidad_minima: "",
+        dias_garantia: 365,
         categoria_id: "",
         marca_id: "",
         sku: "",
@@ -32,8 +33,8 @@ export default function ProductModal({ isOpen, onClose, product, categorias, mar
                     descripcion: "",
                     precio: "",
                     precio_costo: "",
-                    stock: "",
-                    stock_minimo: "",
+                    cantidad_minima: 5,
+                    dias_garantia: 365,
                     categoria_id: "",
                     marca_id: "",
                     sku: "",
@@ -62,8 +63,10 @@ export default function ProductModal({ isOpen, onClose, product, categorias, mar
         const method = product ? "PUT" : "POST";
 
         // Validate
-        if (!formData.nombre || !formData.precio || !formData.stock) {
-            toast.error("Por favor completa los campos requeridos");
+        if (!formData.nombre || !formData.precio || !formData.precio_costo ||
+            !formData.categoria_id || !formData.marca_id || !formData.sku ||
+            !formData.cantidad_minima || !formData.dias_garantia) {
+            toast.error("Por favor completa todos los campos obligatorios");
             return;
         }
 
@@ -217,26 +220,29 @@ export default function ProductModal({ isOpen, onClose, product, categorias, mar
                                     <div className="space-y-6">
                                         <h3 className="text-lg font-semibold text-white flex items-center gap-2">
                                             <Package className="h-5 w-5 text-purple-400" />
-                                            Inventario
+                                            Inventario & Garantía
                                         </h3>
                                         <div className="grid gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-gray-400 ml-1">Stock Actual</label>
-                                                <input
-                                                    required
-                                                    type="number"
-                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-transparent outline-none transition-all focus:bg-slate-900 font-mono"
-                                                    value={formData.stock}
-                                                    onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                                                />
-                                            </div>
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium text-gray-400 ml-1">Stock Mínimo (Alerta)</label>
                                                 <input
                                                     type="number"
+                                                    min="1"
                                                     className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-transparent outline-none transition-all focus:bg-slate-900 font-mono"
-                                                    value={formData.stock_minimo || 5}
-                                                    onChange={e => setFormData({ ...formData, stock_minimo: e.target.value })}
+                                                    value={formData.cantidad_minima}
+                                                    onChange={e => setFormData({ ...formData, cantidad_minima: e.target.value })}
+                                                    placeholder="5"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-400 ml-1">Días de Garantía</label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-purple-500/50 focus:border-transparent outline-none transition-all focus:bg-slate-900 font-mono"
+                                                    value={formData.dias_garantia}
+                                                    onChange={e => setFormData({ ...formData, dias_garantia: e.target.value })}
+                                                    placeholder="365"
                                                 />
                                             </div>
                                         </div>

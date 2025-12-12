@@ -12,7 +12,8 @@ export async function GET(request) {
     let sql = `
       SELECT p.*, c.nombre as categoria_nombre, m.nombre as marca_nombre,
              COALESCE(SUM(i.cantidad_disponible), 0) as stock,
-             COALESCE(MAX(i.cantidad_minima), 0) as stock_minimo,
+             p.cantidad_minima,
+             p.dias_garantia,
              COALESCE(AVG(r.calificacion), 0) as rating_promedio,
              COUNT(r.id) as total_reviews
       FROM productos p
@@ -69,7 +70,8 @@ export async function POST(request) {
       precio,
       precio_costo,
       stock,
-      stock_minimo,
+      cantidad_minima,
+      dias_garantia,
       categoria_id,
       marca_id,
       sku,
@@ -82,8 +84,8 @@ export async function POST(request) {
 
     // Insert product
     const productRes = await query(`
-      INSERT INTO productos (nombre, descripcion, precio, precio_costo, categoria_id, marca_id, sku, imagen_url)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      INSERT INTO productos (nombre, descripcion, precio, precio_costo, categoria_id, marca_id, sku, imagen_url, cantidad_minima, dias_garantia)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `, [
       nombre,
@@ -93,22 +95,14 @@ export async function POST(request) {
       categoria_id || null,
       marca_id || null,
       sku || null,
-      imagen_url || null
+      imagen_url || null,
+      cantidad_minima || 5,
+      dias_garantia || 365
     ]);
 
     const newProduct = productRes.rows[0];
 
-    // Insert inventory for default location (assuming ID 1 exists, if not we should create it or handle error)
-    // We'll try to get the first location ID
-    const locRes = await query('SELECT id FROM ubicaciones LIMIT 1');
-    const locationId = locRes.rows.length > 0 ? locRes.rows[0].id : 1;
-
-    await query(`
-      INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible, cantidad_minima)
-      VALUES ($1, $2, $3, $4)
-    `, [newProduct.id, locationId, stock || 0, stock_minimo || 0]);
-
-    return Response.json({ ...newProduct, stock, stock_minimo });
+    return Response.json({ ...newProduct, stock: 0, cantidad_minima, dias_garantia });
   } catch (error) {
     console.error("Error creating producto:", error);
     return Response.json({ error: error.message || "Error creating producto" }, { status: 500 });
@@ -124,8 +118,8 @@ export async function PUT(request) {
       descripcion,
       precio,
       precio_costo,
-      stock,
-      stock_minimo,
+      cantidad_minima,
+      dias_garantia,
       categoria_id,
       marca_id,
       sku,
@@ -145,8 +139,9 @@ export async function PUT(request) {
         sku = $7,
         imagen_url = $8,
         activo = $9,
-        fecha_actualizacion = CURRENT_TIMESTAMP
-      WHERE id = $10
+        cantidad_minima = $10,
+        dias_garantia = $11
+      WHERE id = $12
       RETURNING *
     `, [
       nombre,
@@ -158,6 +153,8 @@ export async function PUT(request) {
       sku,
       imagen_url,
       activo,
+      cantidad_minima,
+      dias_garantia,
       id
     ]);
 
@@ -170,19 +167,20 @@ export async function PUT(request) {
     const invCheck = await query('SELECT id FROM inventario WHERE producto_id = $1 AND ubicacion_id = $2', [id, locationId]);
 
     if (invCheck.rows.length > 0) {
+      // Don't update stock on product edit, only metadata
       await query(`
             UPDATE inventario 
-            SET cantidad_disponible = $1, cantidad_minima = $2
-            WHERE producto_id = $3 AND ubicacion_id = $4
-        `, [stock, stock_minimo, id, locationId]);
+            SET cantidad_minima = $1
+            WHERE producto_id = $2 AND ubicacion_id = $3
+        `, [cantidad_minima, id, locationId]);
     } else {
       await query(`
             INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible, cantidad_minima)
-            VALUES ($1, $2, $3, $4)
-        `, [id, locationId, stock, stock_minimo]);
+            VALUES ($1, $2, 0, $3)
+        `, [id, locationId, cantidad_minima]);
     }
 
-    return Response.json({ ...productRes.rows[0], stock, stock_minimo });
+    return Response.json({ ...productRes.rows[0], cantidad_minima, dias_garantia });
   } catch (error) {
     console.error("Error updating producto:", error);
     return Response.json({ error: "Error updating producto" }, { status: 500 });
@@ -201,7 +199,7 @@ export async function DELETE(request) {
     // Soft delete
     const result = await query(`
       UPDATE productos
-      SET activo = false, fecha_actualizacion = CURRENT_TIMESTAMP
+      SET activo = false
       WHERE id = $1
       RETURNING id
     `, [id]);

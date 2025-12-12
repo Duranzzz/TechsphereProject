@@ -7,86 +7,45 @@ export async function POST(request) {
         const body = await request.json();
         const { nombre, apellido, email, telefono, password, calle, ciudad, estado, pais } = body;
 
-        // Basic validation
-        if (!nombre || !email || !password || !ciudad || !estado) {
-            return Response.json(
-                { error: 'Faltan campos obligatorios' },
-                { status: 400 }
-            );
-        }
+        // Hash password
+        const hashedPassword = await argon2.hash(password);
 
-        // Check if email already exists
-        const emailCheck = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-        if (emailCheck.rows.length > 0) {
+        // Call Stored Function
+        const result = await pool.query(
+            `SELECT registrar_usuario_nuevo($1, $2, $3, $4, $5, $6) as user_id`,
+            [
+                nombre,
+                apellido || '',   // Now passing surname
+                telefono || null, // Now passing phone
+                email,
+                hashedPassword,
+                {
+                    calle: calle || '',
+                    ciudad: ciudad,
+                    estado: estado,
+                    pais: pais || 'Bolivia'
+                }
+            ]
+        );
+
+        const userId = result.rows[0].user_id;
+
+        return Response.json(
+            { message: 'Usuario registrado correctamente', userId },
+            { status: 201 }
+        );
+
+    } catch (error) {
+        console.error('Registration error:', error);
+        // Handle specific DB errors if needed
+        if (error.code === '23505') { // Unique violation
             return Response.json(
                 { error: 'El correo electrónico ya está registrado' },
                 { status: 409 }
             );
         }
-
-        // Hash password
-        const hashedPassword = await argon2.hash(password);
-
-        // Transaction for atomicity
-        const client = await pool.connect();
-        try {
-            await client.query('BEGIN');
-
-            // 1. Create Address
-            const calleValue = calle && calle.trim() !== '' ? calle : 'Sin calle';
-            const paisValue = pais || 'Bolivia';
-
-            const addressRes = await client.query(
-                `INSERT INTO direcciones (calle, ciudad, estado, pais) 
-                 VALUES ($1, $2, $3, $4) 
-                 RETURNING id`,
-                [calleValue, ciudad, estado, paisValue]
-            );
-            const direccionId = addressRes.rows[0].id;
-
-            // 2. Create User
-            const userResult = await client.query(
-                `INSERT INTO users (nombre, email, password, rol) 
-                 VALUES ($1, $2, $3, 'cliente') 
-                 RETURNING id`,
-                [nombre, email, hashedPassword]
-            );
-            const userId = userResult.rows[0].id;
-
-            // 3. Create Client Profile
-            const clientResult = await client.query(
-                `INSERT INTO clientes (nombre, apellido, telefono, user_id, tipo) 
-                 VALUES ($1, $2, $3, $4, 'consumidor_final')
-                 RETURNING id`,
-                [nombre, apellido || null, telefono || null, userId]
-            );
-            const clientId = clientResult.rows[0].id;
-
-            // 4. Link Address
-            await client.query(
-                `INSERT INTO cliente_direcciones (cliente_id, direccion_id, alias, es_principal) 
-                 VALUES ($1, $2, 'Casa', true)`,
-                [clientId, direccionId]
-            );
-
-            await client.query('COMMIT');
-
-            return Response.json(
-                { message: 'Usuario registrado correctamente', userId },
-                { status: 201 }
-            );
-
-        } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-        } finally {
-            client.release();
-        }
-
-    } catch (error) {
-        console.error('Registration error:', error);
         return Response.json(
-            { error: 'Error al registrar usuario' },
+            { error: 'Error al registrar usuario: ' + error.message },
             { status: 500 }
         );
     }

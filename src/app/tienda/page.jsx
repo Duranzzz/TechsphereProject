@@ -304,6 +304,11 @@ export default function TechStore() {
                           src={producto.imagen_url}
                           alt={producto.nombre}
                           className="w-full h-full object-contain drop-shadow-2xl"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '';
+                            e.target.style.display = 'none';
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center opacity-30">
@@ -397,7 +402,16 @@ export default function TechStore() {
                     <div key={item.id} className="flex gap-4 p-4 bg-white/5 border border-white/5 rounded-2xl group hover:border-blue-500/30 transition-colors">
                       <div className="h-20 w-20 bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
                         {item.imagen_url ? (
-                          <img src={item.imagen_url} alt={item.nombre} className="w-full h-full object-cover" />
+                          <img
+                            src={item.imagen_url}
+                            alt={item.nombre}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = '';
+                              e.target.style.display = 'none';
+                            }}
+                          />
                         ) : <Package className="h-8 w-8 text-gray-500" />}
                       </div>
                       <div className="flex-1">

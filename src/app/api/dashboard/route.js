@@ -47,7 +47,28 @@ export async function GET() {
     const productosStock = productosStockRes.rows[0];
     const ventasMes = ventasMesRes.rows[0];
     const topProductos = topProductosRes.rows;
-    const salesHistory = salesHistoryRes.rows;
+
+    // Generar los últimos 7 días SIEMPRE (hoy + 6 días anteriores)
+    const salesHistory = [];
+    const salesMap = new Map(salesHistoryRes.rows.map(row => [row.fecha, row]));
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+
+      // Usar fecha local, no UTC (evita problema de timezone)
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`; // YYYY-MM-DD local
+
+      const existingData = salesMap.get(dateStr);
+      salesHistory.push({
+        fecha: dateStr,
+        monto: existingData ? parseFloat(existingData.monto) : 0,
+        cantidad: existingData ? parseInt(existingData.cantidad) : 0
+      });
+    }
 
     return Response.json({
       ventasHoy: {

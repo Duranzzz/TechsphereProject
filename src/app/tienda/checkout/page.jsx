@@ -59,8 +59,8 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (!currentAddress.calle || !currentAddress.ciudad) {
-            toast.error("Por favor selecciona o agrega una dirección de envío en tu perfil");
+        if (!selectedAddressId) {
+            toast.error("Por favor selecciona una dirección de envío");
             return;
         }
 
@@ -72,10 +72,11 @@ export default function CheckoutPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cliente: {
+                        id: user.id,
                         nombre: user.nombre,
                         email: user.email,
-                        direccion: `${currentAddress.calle}, ${currentAddress.ciudad}, ${currentAddress.estado}, ${currentAddress.pais}`,
                     },
+                    direccion_id: selectedAddressId,
                     productos: cart.map(item => ({
                         id: item.id,
                         cantidad: item.cantidad,

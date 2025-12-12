@@ -23,7 +23,8 @@ CREATE TABLE public.direcciones (
     estado VARCHAR(100) NOT NULL,
     codigo_postal VARCHAR(20),
     pais VARCHAR(100) DEFAULT 'Bolivia',
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.direcciones OWNER TO neondb_owner;
 
@@ -32,7 +33,8 @@ CREATE TABLE public.categorias (
     nombre character varying(100) NOT NULL UNIQUE,
     descripcion text,
     activa boolean DEFAULT true,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.categorias OWNER TO neondb_owner;
 
@@ -41,7 +43,8 @@ CREATE TABLE public.marcas (
     nombre character varying(100) NOT NULL UNIQUE,
     pais_origen character varying(50),
     sitio_web character varying(255),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.marcas OWNER TO neondb_owner;
 
@@ -49,7 +52,8 @@ CREATE TABLE public.metodos_pago (
     id SERIAL PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     activo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.metodos_pago OWNER TO neondb_owner;
 
@@ -90,7 +94,8 @@ CREATE TABLE public.clientes (
     tipo character varying(20) DEFAULT 'consumidor_final' CHECK (tipo IN ('consumidor_final', 'empresa')),
     fecha_registro timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     activo boolean DEFAULT true,
-    user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE
+    user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.clientes OWNER TO neondb_owner;
 
@@ -101,6 +106,7 @@ CREATE TABLE public.cliente_direcciones (
     alias VARCHAR(50),
     es_principal BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT cliente_direcciones_unico UNIQUE (cliente_id, direccion_id)
 );
 ALTER TABLE public.cliente_direcciones OWNER TO neondb_owner;
@@ -111,10 +117,11 @@ CREATE TABLE public.empleados (
     apellido character varying(100),
     telefono character varying(20),
     puesto character varying(20) DEFAULT 'vendedor' CHECK (puesto IN ('vendedor', 'gerente', 'administrativo')),
-    fecha_contratacion date DEFAULT CURRENT_DATE, -- AUTOMÁTICA: se establece al día de creación del registro
+    fecha_contratacion date DEFAULT CURRENT_DATE, 
     activo boolean DEFAULT true,
     user_id INTEGER UNIQUE REFERENCES public.users(id) ON DELETE CASCADE,
-    direccion_id INTEGER REFERENCES public.direcciones(id)
+    direccion_id INTEGER REFERENCES public.direcciones(id),
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.empleados OWNER TO neondb_owner;
 
@@ -123,9 +130,9 @@ CREATE TABLE public.proveedores (
     nombre character varying(200) NOT NULL,
     contacto character varying(100),
     telefono character varying(20),
-    email character varying(255), -- Email de contacto del proveedor (puede ser diferente al login)
+    email character varying(255), 
     activo boolean DEFAULT true,
-    user_id INTEGER REFERENCES public.users(id) ON DELETE SET NULL, -- Opcional, si el proveedor tiene acceso
+    user_id INTEGER REFERENCES public.users(id) ON DELETE SET NULL, 
     direccion_id INTEGER REFERENCES public.direcciones(id),
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
@@ -145,9 +152,11 @@ CREATE TABLE public.productos (
     marca_id integer REFERENCES public.marcas(id),
     sku character varying(50) UNIQUE,
     activo boolean DEFAULT true,
+    imagen_url TEXT,
+    cantidad_minima INTEGER DEFAULT 5,
+    dias_garantia INTEGER DEFAULT 365,
     fecha_creacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    fecha_actualizacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    imagen_url TEXT
+    fecha_actualizacion timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.productos OWNER TO neondb_owner;
 
@@ -212,7 +221,8 @@ CREATE TABLE public.ventas (
     impuestos numeric(10,2) DEFAULT 0,
     total numeric(10,2) NOT NULL,
     estado character varying(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'completada', 'cancelada')),
-    metodo_pago_id INTEGER REFERENCES public.metodos_pago(id)
+    metodo_pago_id INTEGER REFERENCES public.metodos_pago(id),
+    direccion_id INTEGER REFERENCES public.direcciones(id)
 );
 ALTER TABLE public.ventas OWNER TO neondb_owner;
 
@@ -233,12 +243,10 @@ CREATE TABLE public.envios (
     id SERIAL PRIMARY KEY,
     venta_id INTEGER NOT NULL UNIQUE REFERENCES public.ventas(id) ON DELETE CASCADE,
     direccion_id INTEGER NOT NULL REFERENCES public.direcciones(id),
-    courier VARCHAR(100) NOT NULL,
-    numero_guia VARCHAR(100),
-    costo DECIMAL(10,2) DEFAULT 0,
-    estado VARCHAR(20) DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'preparando', 'transito', 'entregado', 'fallido')),
-    fecha_envio TIMESTAMPTZ,
-    fecha_entrega TIMESTAMPTZ,
+    estado VARCHAR(20) DEFAULT 'entregado',
+    costo DECIMAL(10,2) DEFAULT 50.00,
+    fecha_envio TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    fecha_entrega TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP, -- Asumimos entrega inmediata por 'entregado'
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.envios OWNER TO neondb_owner;
@@ -249,7 +257,7 @@ CREATE TABLE public.garantias (
     fecha_inicio DATE NOT NULL DEFAULT CURRENT_DATE,
     fecha_fin DATE NOT NULL,
     estado VARCHAR(20) DEFAULT 'activa' CHECK (estado IN ('activa', 'expirada', 'utilizada', 'cancelada')),
-    detalles TEXT,
+    detalles TEXT DEFAULT 'Sin detalles',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE public.garantias OWNER TO neondb_owner;

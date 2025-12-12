@@ -4,11 +4,11 @@ export async function POST(request) {
   const client = await pool.connect();
   try {
     const body = await request.json();
-    const { cliente, productos, empleado_id, metodo_pago } = body;
+    const { cliente, productos, empleado_id, metodo_pago, direccion_id } = body;
 
-    if (!cliente || !productos || productos.length === 0) {
+    if (!cliente || !productos || productos.length === 0 || !direccion_id) {
       return Response.json(
-        { error: "Faltan datos requeridos" },
+        { error: "Faltan datos requeridos (Cliente, Productos o Dirección)" },
         { status: 400 }
       );
     }
@@ -102,20 +102,7 @@ export async function POST(request) {
         WHERE producto_id = $2 AND ubicacion_id = $3
       `, [cantidad, item.id, sourceLocationId]);
 
-      // KARDEX ENTRY
-      await client.query(`
-          INSERT INTO kardex (
-            producto_id, 
-            ubicacion_id, 
-            tipo_movimiento, 
-            cantidad, 
-            saldo_anterior, 
-            saldo_actual, 
-            referencia_tabla, 
-            observacion
-          )
-          VALUES ($1, $2, 'salida', $3, $4, $5, 'ventas', 'Venta realizada')
-      `, [item.id, sourceLocationId, cantidad, currentStock, currentStock - cantidad]);
+
     }
 
     const impuestos = subtotal * 0.0;
@@ -148,11 +135,12 @@ export async function POST(request) {
         impuestos, 
         total, 
         metodo_pago_id, 
+        direccion_id,
         estado
       )
-      VALUES ($1, $2, $3, $4, $5, $6, 'completada')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'completada')
       RETURNING id
-    `, [clienteId, empleado_id || null, subtotal, impuestos, total, metodoPagoId]);
+    `, [clienteId, empleado_id || null, subtotal, impuestos, total, metodoPagoId, direccion_id]);
 
     const ventaId = nuevaVenta.rows[0].id;
 

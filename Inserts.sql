@@ -94,22 +94,22 @@ INSERT INTO marcas (nombre, pais_origen, sitio_web) VALUES
 -- ========================================
 INSERT INTO users (nombre, email, password, rol) VALUES 
 ('Admin TechSphere', 'admin@techsphere.com', '$argon2id$v=19$m=65536,t=3,p=4$jCDeAaFRH7yzJxVhpuNIbw$mrBdakeMTViLISq4AqFqrVoDp9zFs5MPCCXF/b6Lv6Y', 'admin'),
-('Leonardo DiCaprio', 'leonardo.dicaprio@techsphere.com', '', 'empleado'),
-('Brad Pitt', 'brad.pitt@techsphere.com', '', 'empleado'),
-('Scarlett Johansson', 'scarlett.johansson@techsphere.com', '', 'empleado'),
-('Robert Downey Jr.', 'robert.downey@techsphere.com', '', 'empleado'),
-('Lionel Messi', 'leo.messi10@gmail.com', '', 'cliente'),
-('Cristiano Ronaldo', 'cr7.siuuu@gmail.com', '', 'cliente'),
-('Neymar Jr', 'ney.joya@gmail.com', '', 'cliente'),
-('Kylian Mbappé', 'kiki.mbappe@gmail.com', '', 'cliente'),
-('Erling Haaland', 'robot.haaland@gmail.com', '', 'cliente'),
-('Vinicius Jr', 'vini.bailar@gmail.com', '', 'cliente'),
-('Jude Bellingham', 'hey.jude@gmail.com', '', 'cliente'),
-('Kevin De Bruyne', 'kdb.assist@gmail.com', '', 'cliente'),
-('Luka Modric', 'lukita.magic@gmail.com', '', 'cliente'),
-('Mohamed Salah', 'mo.salah@gmail.com', '', 'cliente'),
-('Robert Lewandowski', 'lewy.gol@gmail.com', '', 'cliente'),
-('Sergio Ramos', 'sr4.camas@gmail.com', '', 'cliente');
+('Leonardo DiCaprio', 'leonardo.dicaprio@techsphere.com', '$argon2id$v=19$m=65536,t=3,p=4$6aOh72jTvUPcFvUYABLHtg$Vo9C/LLBHMThmeEzcymAQsREtVzbNafZWC59FFLEkys', 'empleado'),
+('Brad Pitt', 'brad.pitt@techsphere.com', '$argon2id$v=19$m=65536,t=3,p=4$Mywv1kZH9VP2b0kF/z0gqg$L5xyLl9YT9ka3056CFpa15ANIofG0p3BybwCswiM02I', 'empleado'),
+('Scarlett Johansson', 'scarlett.johansson@techsphere.com', '$argon2id$v=19$m=65536,t=3,p=4$jYkyyoqpdkjBCFSrgn86dQ$VY0bi+ypwSq4WD1jNW06ZLL/SEKIswsRymj1yLA1CpA', 'empleado'),
+('Robert Downey Jr.', 'robert.downey@techsphere.com', '$argon2id$v=19$m=65536,t=3,p=4$ngI7nG5f1yumo/yX+BBK1w$EuaYEfLPeelvBpgqa9IwnfvataNXRWVLfaWlklMXPRI', 'empleado'),
+('Lionel Messi', 'leo.messi10@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$IublT/LzcMMbZZyLtrsp+Q$QyHC0TJHiMrn/o6ukooNvosvx58/TWZPd9xk2XUTTiM', 'cliente'),
+('Cristiano Ronaldo', 'cr7.siuuu@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$NEIyxuYffU6padll4Sfz+g$zoVz99prZ1Em82k/C0tg97ULiJBTC1NPWjb1TVZNjUs', 'cliente'),
+('Neymar Jr', 'ney.joya@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$hnB2KN5OIryiQTiJwSDERQ$46XSF63T4DxiOWO+X2wxnVlysivs/34mQV+KJwF3XFA', 'cliente'),
+('Kylian Mbappé', 'kiki.mbappe@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$N7xUmcbI//KcDuk+sKk/wQ$uB0Yah8omj7d217MdKrDs2sIEhFtLJSJ0EzmNDUqOls', 'cliente'),
+('Erling Haaland', 'robot.haaland@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$w9YESglnSXRGiz37FqmKsA$UadPEgVTVAqd8b7VcRGcw28L0ZTHdLieQ+PiOMyGnyM', 'cliente'),
+('Vinicius Jr', 'vini.bailar@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$7STdyDkTHZGF1682D9yo9A$IfS60wrHWnEB1yLDVrX6jK9boiKGacQUU/VSS9GlVCg', 'cliente'),
+('Jude Bellingham', 'hey.jude@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$UXHBlWgsmGKkgxRa4326BQ$/jN/xUGCfXhTkfohmc9XmkX1CgKqULjime0p49ZmoqQ', 'cliente'),
+('Kevin De Bruyne', 'kdb.assist@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$OT3vnxetCyC/6rpU2oeYOg$8sk22GeZmE3+FIdsf2YrVl6nbWyCYyFMnuGxRB072RA', 'cliente'),
+('Luka Modric', 'lukita.magic@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$qV0LQo9T8Vu09YC3P9bqTg$OB0Y5GOHink9eghSfFBjbabe0tUwnvIy391XcYsr9K0', 'cliente'),
+('Mohamed Salah', 'mo.salah@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$KSXF+dzNjjYQXA6iC/hkjA$3a7NTi8Xu+tLuYT/CNEMLtWA3scNEPAT30nm4jPagio', 'cliente'),
+('Robert Lewandowski', 'lewy.gol@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$I6ln9figp0wt+C16PlM/Yw$G3Yzqzlc16aYwqE96R39HgcJkl9p3s+wD5tRvwRPVWU', 'cliente'),
+('Sergio Ramos', 'sr4.camas@gmail.com', '$argon2id$v=19$m=65536,t=3,p=4$HbOxL2WoGHhI5AsV6eIgTA$JTDZM7ayCNgZ05W7gY9+gxnDiAMHCF7CdTphcRFk6S8', 'cliente');
 
 
 -- ========================================
@@ -171,58 +171,58 @@ INSERT INTO proveedores (nombre, contacto, email, activo, direccion_id) VALUES
 -- ========================================
 -- 7. PRODUCTOS (40 ITEMS)
 -- ========================================
-INSERT INTO productos (nombre, descripcion, precio, precio_costo, categoria_id, marca_id, sku, activo, imagen_url) VALUES 
--- Smartphones (6)
-('iPhone 15 Pro Max', 'Titanio, Chip A17 Pro, 256GB', 1199.00, 950.00, 1, 1, 'IPH15PM-256', true, ''),
-('iPhone 15', 'Aluminio, Chip A16, 128GB', 799.00, 600.00, 1, 1, 'IPH15-128', true, ''),
-('Samsung Galaxy S24 Ultra', 'Titanio, AI, S Pen, 512GB', 1299.00, 980.00, 1, 2, 'S24U-512', true, ''),
-('Samsung Galaxy Z Flip 5', 'Plegable, Pantalla Flex, 256GB', 999.00, 750.00, 1, 2, 'ZFLIP5', true, ''),
-('Google Pixel 8 Pro', 'Cámara AI, Tensor G3', 999.00, 720.00, 1, 8, 'PIXEL8P', true, ''),
-('Sony Xperia 1 V', 'Para creadores, 4K OLED', 1399.00, 1000.00, 1, 3, 'XPERIA1V', true, ''),
+INSERT INTO productos (nombre, descripcion, precio, precio_costo, categoria_id, marca_id, sku, activo, imagen_url, cantidad_minima, dias_garantia) VALUES 
+-- Smartphones (6) (Min: 5, Garantia: 365)
+('iPhone 15 Pro Max', 'Titanio, Chip A17 Pro, 256GB', 1199.00, 950.00, 1, 1, 'IPH15PM-256', true, 'https://nextlevel.com.bo/cdn/shop/files/IPHONE15PROMAX_256_720x.jpg?v=1728942145', 5, 365),
+('iPhone 15', 'Aluminio, Chip A16, 128GB', 799.00, 600.00, 1, 1, 'IPH15-128', true, 'https://www.machines.com.my/cdn/shop/products/iPhone_15_Blue_PDP_Image_Position-1__GBEN_1e72ee66-26eb-4f82-8bb3-de765f0f0a94.jpg?v=1705480744&width=600', 5, 365),
+('Samsung Galaxy S24 Ultra', 'Titanio, AI, S Pen, 512GB', 1299.00, 980.00, 1, 2, 'S24U-512', true, 'https://incomm.com.bn/img/uploaditemdetail/dt17490ded155d25242556c60e92ba9d202f691593.png', 5, 365),
+('Samsung Galaxy Z Flip 5', 'Plegable, Pantalla Flex, 256GB', 999.00, 750.00, 1, 2, 'ZFLIP5', true, 'https://images.samsung.com/cl/smartphones/galaxy-z-flip5/images/galaxy-z-flip5-highlights-colors-mint-mo.jpg?imbypass=true', 5, 365),
+('Google Pixel 8 Pro', 'Cámara AI, Tensor G3', 999.00, 720.00, 1, 8, 'PIXEL8P', true, 'https://m.media-amazon.com/images/I/71XEjCc4yLL._AC_SX425_.jpg', 5, 365),
+('Sony Xperia 1 V', 'Para creadores, 4K OLED', 1399.00, 1000.00, 1, 3, 'XPERIA1V', true, 'https://i.blogs.es/50f860/experia/1024_2000.jpeg', 3, 365),
 
--- Laptops (6)
-('MacBook Pro 16 M3 Max', 'La bestia para pros', 3499.00, 2800.00, 2, 1, 'MBP16-M3MAX', true, ''),
-('MacBook Air 15 M2', 'Delgada y ligera', 1299.00, 1000.00, 2, 1, 'MBA15-M2', true, ''),
-('Dell XPS 15', 'Pantalla OLED 3.5K', 2199.00, 1700.00, 2, 7, 'XPS15-9530', true, ''),
-('ASUS ROG Strix Scar 18', 'Gaming extremo RTX 4090', 3899.00, 3100.00, 2, 6, 'ROG-SCAR18', true, ''),
-('Samsung Galaxy Book4 Ultra', 'Pantalla AMOLED 3K', 2399.00, 1900.00, 2, 2, 'GALAXYBOOK4', true, ''),
-('Dell Alienware M18', 'Potencia de escritorio', 2599.00, 2000.00, 2, 7, 'ALIENM18', true, ''),
+-- Laptops (6) (Min: 3, Garantia: 365/730)
+('MacBook Pro 16 M3 Max', 'La bestia para pros', 3499.00, 2800.00, 2, 1, 'MBP16-M3MAX', true, 'https://www.hoxtonmacs.co.uk/cdn/shop/files/apple-macbook-pro-16-inch-macbook-pro-16-inch-m3-max-16-core-space-black-2023-excellent-46544620323132.jpg?v=1764057156&width=720', 2, 365),
+('MacBook Air 15 M2', 'Delgada y ligera', 1299.00, 1000.00, 2, 1, 'MBA15-M2', true, 'https://www.machines.com.my/cdn/shop/products/MacBook_Air_15-in_M2_Midnight_PDP_Image_Position_1__global_2bd26923-1949-46bf-a486-78773e3f136a.jpg?v=1705597648&width=600', 5, 365),
+('Dell XPS 15', 'Pantalla OLED 3.5K', 2199.00, 1700.00, 2, 7, 'XPS15-9530', true, 'https://dellstatic.luroconnect.com/media/catalog/product/cache/74ae05ef3745aec30d7f5a287debd7f5/n/o/notebook-xps-15-9530-t-black-gallery-1.jpg', 3, 730),
+('ASUS ROG Strix Scar 18', 'Gaming extremo RTX 4090', 3899.00, 3100.00, 2, 6, 'ROG-SCAR18', true, 'https://shop.asus.com/media/catalog/product/0/2/02_scar_new_18_l_1_5.jpg?format=auto&optimize=medium&bg-color=255%2C255%2C255&fit=bounds&height=1000&width=1000&canvas=1000%3A1000', 2, 730),
+('Samsung Galaxy Book4 Ultra', 'Pantalla AMOLED 3K', 2399.00, 1900.00, 2, 2, 'GALAXYBOOK4', true, 'https://image-us.samsung.com/SamsungUS/home/computing/galaxy-books/gb4-ultra-16/GB4Ultra_16_US_Copilot_Moonstone-Gray_001_Front-1600x1200.jpg?$product-details-jpg$', 3, 365),
+('Dell Alienware M18', 'Potencia de escritorio', 2599.00, 2000.00, 2, 7, 'ALIENM18', true, 'https://i5.walmartimages.com/seo/Dell-Alienware-m18-R2-18-32GB-1GB-SSD-Core-i9-14900HX-2-20GHz-WIN11H-Dark-Metallic-Moon_f7bbde8c-92cb-408f-bfa8-96200296aa58.83992d0b1dd6fa7883ca9af0a9b20ba6.jpeg?odnHeight=573&odnWidth=573&odnBg=FFFFFF', 2, 730),
 
--- Gaming (6)
-('PlayStation 5 Slim', 'Consola con lector', 499.00, 420.00, 3, 3, 'PS5-SLIM', true, ''),
-('Xbox Series X', 'La consola más potente', 499.00, 420.00, 3, 10, 'XBOX-SX', true, ''),
-('Nintendo Switch OLED', 'Pantalla 7 pulgadas', 349.00, 280.00, 3, 9, 'SWITCH-OLED', true, ''),
-('Logitech G Pro X Superlight 2', 'Mouse esports wireless', 159.00, 100.00, 3, 5, 'GPRO-X2', true, ''),
-('ASUS ROG Ally', 'Consola portátil Windows', 699.00, 550.00, 3, 6, 'ROG-ALLY', true, ''),
-('DualSense Edge', 'Control pro PS5', 199.00, 150.00, 3, 3, 'DUALSENSE-EDGE', true, ''),
+-- Gaming (6) (Min: 5-10, Garantia: 365)
+('PlayStation 5 Slim', 'Consola con lector', 499.00, 420.00, 3, 3, 'PS5-SLIM', true, 'https://www.dismac.com.bo/media/catalog/product/c/f/cfi-2015b-2.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=&width=&canvas=:', 10, 365),
+('Xbox Series X', 'La consola más potente', 499.00, 420.00, 3, 10, 'XBOX-SX', true, 'https://cms-assets.xboxservices.com/assets/bc/40/bc40fdf3-85a6-4c36-af92-dca2d36fc7e5.png?n=642227_Hero-Gallery-0_A1_857x676.png', 10, 365),
+('Nintendo Switch OLED', 'Pantalla 7 pulgadas', 349.00, 280.00, 3, 9, 'SWITCH-OLED', true, 'https://www.compraderas.com.bo/wp-content/uploads/2021/12/nintendo-switch-oled.jpg.webp', 10, 365),
+('Logitech G Pro X Superlight 2', 'Mouse esports wireless', 159.00, 100.00, 3, 5, 'GPRO-X2', true, 'https://eagleco.net/wp-content/uploads/2024/09/7860.jpg.webp', 8, 180),
+('ASUS ROG Ally', 'Consola portátil Windows', 699.00, 550.00, 3, 6, 'ROG-ALLY', true, 'https://dlcdnwebimgs.asus.com/gain/4C877B23-808A-430C-A679-1F32A9F0D876/w717/h525', 5, 365),
+('DualSense Edge', 'Control pro PS5', 199.00, 150.00, 3, 3, 'DUALSENSE-EDGE', true, 'https://imgix.bustle.com/uploads/image/2023/3/13/5a18eea6-26e6-4d7b-ad7b-3ff58ce6c89f-dualsense-edge-review-raymondwong-inverse-11.jpg?w=564&h=564&fit=crop&crop=faces', 8, 180),
 
 -- Audio (6)
-('AirPods Pro 2', 'USB-C, Cancelación ruido', 249.00, 180.00, 4, 1, 'APP2-USBC', true, ''),
-('AirPods Max', 'Audio de alta fidelidad', 549.00, 420.00, 4, 1, 'AIRPODS-MAX', true, ''),
-('Sony WH-1000XM5', 'Mejor cancelación de ruido', 399.00, 280.00, 4, 3, 'SONY-XM5', true, ''),
-('Samsung Galaxy Buds2 Pro', 'Audio 24-bit Hi-Fi', 229.00, 150.00, 4, 2, 'BUDS2PRO', true, ''),
-('Logitech G733', 'Headset gaming wireless', 129.00, 80.00, 4, 5, 'G733-RGB', true, ''),
-('Sony WF-1000XM5', 'Earbuds premium', 299.00, 210.00, 4, 3, 'SONY-WF-XM5', true, ''),
+('AirPods Pro 2', 'USB-C, Cancelación ruido', 249.00, 180.00, 4, 1, 'APP2-USBC', true, 'https://www.ismartbolivia.com/wp-content/uploads/2020/05/MQD83-800x800.jpeg', 15, 365),
+('AirPods Max', 'Audio de alta fidelidad', 549.00, 420.00, 4, 1, 'AIRPODS-MAX', true, 'https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/airpods-max-select-202409-midnight_FV1?wid=976&hei=916&fmt=jpeg&qlt=90&.v=azQxRkVJKzd6V3J0aGNqWFhLMzBmdmVWNWdHYnp5cHkwMldsSElEOHpyd0cyWGRFNFZ5QTk3bFlteis2Q2NNaWpENFdPQTN0TWQ4ejhtTWxrUHVDeElGZGV2eWhZaEljUzNSeDlxcDVuWGszbTFldUtUQzN0ellEWHZ3UUFYSS8', 5, 365),
+('Sony WH-1000XM5', 'Mejor cancelación de ruido', 399.00, 280.00, 4, 3, 'SONY-XM5', true, 'https://metapod.com/cdn/shop/files/sony-wh-1000xm5-noise-cancelling-wireless-headphones-midnight-blue-34338795028676.jpg?v=1754022978&width=600', 5, 365),
+('Samsung Galaxy Buds2 Pro', 'Audio 24-bit Hi-Fi', 229.00, 150.00, 4, 2, 'BUDS2PRO', true, 'https://dekoniaudio.com/wp-content/uploads/2023/12/galaxy-buds2-pro-bulletz-master-image-1.png', 10, 365),
+('Logitech G733', 'Headset gaming wireless', 129.00, 80.00, 4, 5, 'G733-RGB', true, 'https://globaliraq.net/cdn/shop/files/2_a48f3794-0dd9-4a4e-b453-0a7cb764d74c.jpg?v=1729955548&width=600', 8, 180),
+('Sony WF-1000XM5', 'Earbuds premium', 299.00, 210.00, 4, 3, 'SONY-WF-XM5', true, 'https://metapod.com/cdn/shop/files/SonyWF-1000XM5WirelessNoiseCancellingTrueWirelessEarphones_XM5__Pink_4.png?v=1754966592&width=600', 10, 365),
 
--- IA Hardware (5)
-('NVIDIA H100 Tensor Core', 'GPU para entrenamiento IA', 30000.00, 25000.00, 8, 4, 'H100-PCIE', true, ''),
-('NVIDIA RTX 4090', 'GPU Consumo para IA local', 1599.00, 1200.00, 8, 4, 'RTX4090-FE', true, ''),
-('NVIDIA Jetson AGX Orin', 'Kit desarrollo IA Edge', 1999.00, 1600.00, 8, 4, 'JETSON-ORIN', true, ''),
-('Google Coral Dev Board', 'TPU Edge Computing', 129.00, 90.00, 8, 8, 'CORAL-DEV', true, ''),
-('AMD Instinct MI300X', 'Acelerador IA Data Center', 25000.00, 20000.00, 8, 10, 'MI300X', true, ''),
+-- IA Hardware (5) (Min: 1-2, Garantia: 365-730)
+('NVIDIA H100 Tensor Core', 'GPU para entrenamiento IA', 30000.00, 25000.00, 8, 4, 'H100-PCIE', true, 'https://media.router-switch.com/media/mf_webp/jpg/media/catalog/product/cache/b90fceee6a5fa7acd36a04c7b968181c/n/v/nvidia-8-h100-8ogb-sxm5-bun_1_1.webp', 1, 730),
+('NVIDIA RTX 4090', 'GPU Consumo para IA local', 1599.00, 1200.00, 8, 4, 'RTX4090-FE', true, 'https://postperspective.com/wp-content/uploads/2022/10/GeForce-RTX4090-3QTR-Back-Left-1-624x423.jpg', 3, 365),
+('NVIDIA Jetson AGX Orin', 'Kit desarrollo IA Edge', 1999.00, 1600.00, 8, 4, 'JETSON-ORIN', true, 'https://m.media-amazon.com/images/I/714DRkY4EkL._AC_SX425_.jpg', 2, 365),
+('Google Coral Dev Board', 'TPU Edge Computing', 129.00, 90.00, 8, 8, 'CORAL-DEV', true, 'https://cdn-shop.adafruit.com/970x728/4385-03.jpg', 5, 180),
+('AMD Instinct MI300X', 'Acelerador IA Data Center', 25000.00, 20000.00, 8, 10, 'MI300X', true, 'https://www.amd.com/content/dam/amd/en/images/products/data-centers/2325906-amd-instinct-platform-product.jpg', 1, 730),
 
--- Accesorios y Otros (11)
-('Apple Watch Ultra 2', 'El reloj definitivo', 799.00, 650.00, 7, 1, 'AW-ULTRA2', true, ''),
-('Samsung Galaxy Watch 6', 'Classic Rotating Bezel', 399.00, 280.00, 7, 2, 'GW6-CLASSIC', true, ''),
-('iPad Pro 13 M4', 'OLED, Chip M4', 1299.00, 1000.00, 6, 1, 'IPADPRO-M4', true, ''),
-('Magic Keyboard iPad', 'Teclado flotante', 299.00, 200.00, 5, 1, 'MAGIC-KEY', true, ''),
-('Apple Pencil Pro', 'Nuevos gestos', 129.00, 90.00, 5, 1, 'PENCIL-PRO', true, ''),
-('Cargador 35W Dual', 'Carga rápida 2 puertos', 59.00, 30.00, 5, 1, 'CHGR-35W', true, ''),
-('Logitech MX Master 3S', 'Mejor mouse productividad', 99.00, 70.00, 5, 5, 'MX-MASTER3S', true, ''),
-('Logitech MX Keys S', 'Teclado premium', 109.00, 75.00, 5, 5, 'MX-KEYS', true, ''),
-('Samsung T7 Shield 2TB', 'SSD Portable Rugged', 169.00, 110.00, 5, 2, 'T7-2TB', true, ''),
-('Cable Thunderbolt 4', 'Pro cable 2m', 129.00, 60.00, 5, 1, 'THUNDER-4', true, ''),
-('Soporte Laptop Alum', 'Ergonómico', 49.00, 20.00, 5, 1, 'LAP-STAND', true, '');
+-- Accesorios y Otros (11) (Min: 10-20, Garantia: 90-180)
+('Apple Watch Ultra 2', 'El reloj definitivo', 799.00, 650.00, 7, 1, 'AW-ULTRA2', true, 'https://www.machines.com.my/cdn/shop/files/Apple_Watch_Ultra_2_49mm_Black_Titanium_Ocean_Band_Black_PDP_Image_Position_1__GBEN_ce4a0a46-7cdb-486b-bf57-a483554e7626.jpg?v=1726228853&width=1100', 5, 365),
+('Samsung Galaxy Watch 6', 'Classic Rotating Bezel', 399.00, 280.00, 7, 2, 'GW6-CLASSIC', true, 'https://www.jbhifi.com.au/cdn/shop/products/654755-Product-0-I-638307592863552126.jpg?v=1695162562', 5, 365),
+('iPad Pro 13 M4', 'OLED, Chip M4', 1299.00, 1000.00, 6, 1, 'IPADPRO-M4', true, 'https://www.ismartbolivia.com/wp-content/uploads/2024/05/ipad-pro-finish-select-202405-13inch-silver-scaled-e1715264561660-800x863.jpeg', 3, 365),
+('Magic Keyboard iPad', 'Teclado flotante', 299.00, 200.00, 5, 1, 'MAGIC-KEY', true, 'https://eshop.macsales.com/images/_gallery_/bin/APLMXQT2LLAB-pimid72417-xl.jpg', 5, 180),
+('Apple Pencil Pro', 'Nuevos gestos', 129.00, 90.00, 5, 1, 'PENCIL-PRO', true, 'https://assets.pawnamerica.com/ProductImages/b38d06b7-0cf9-4224-867a-9736dcccee08.jpg?_gl=1*pnvwwm*_gcl_au*MTg3MTQ5Nzc4LjE3NjUyOTQyMjE.', 8, 180),
+('Cargador 35W Dual', 'Carga rápida 2 puertos', 59.00, 30.00, 5, 1, 'CHGR-35W', true, 'https://images-cdn.ubuy.co.in/646af3566d6b71475832a304-iphone-fast-charger-35w-dual-usb-c.jpg', 20, 90),
+('Logitech MX Master 3S', 'Mejor mouse productividad', 99.00, 70.00, 5, 5, 'MX-MASTER3S', true, 'https://sysbol.com/2522-large_default/mouse-logitech-mx-master-3s.jpg', 8, 180),
+('Logitech MX Keys S', 'Teclado premium', 109.00, 75.00, 5, 5, 'MX-KEYS', true, 'https://www.jbhifi.com.au/cdn/shop/products/647414-Product-0-I-638215360816914605.jpg?v=1685940253', 8, 180),
+('Samsung T7 Shield 2TB', 'SSD Portable Rugged', 169.00, 110.00, 5, 2, 'T7-2TB', true, 'https://m.media-amazon.com/images/I/61CKrZWOcrL._AC_SX425_.jpg', 10, 365),
+('Cable Thunderbolt 4', 'Pro cable 2m', 129.00, 60.00, 5, 1, 'THUNDER-4', true, 'https://www.istudiobyspvi.com/cdn/shop/files/thunderbolt-4-usbc-pro-cable-1-m_MU883.png?v=1718096124&width=1100', 15, 90),
+('Soporte Laptop Alum', 'Ergonómico', 49.00, 20.00, 5, 1, 'LAP-STAND', true, 'https://www.efe.com.pe/media/catalog/product/s/o/soporte_1.jpg?quality=80&bg-color=255,255,255&fit=bounds&height=&width=&canvas=:', 15, 90);
 
 
 -- ========================================
@@ -303,115 +303,32 @@ INSERT INTO detalles_compra (compra_id, producto_id, cantidad, precio_unitario) 
 
 
 -- ========================================
--- 10. KARDEX (40 movimientos de compra)
+-- 11. VENTAS HISTÓRICAS (01-07 DIC 2025)
 -- ========================================
--- Registro de entrada de stock por cada producto comprado.
--- Cada movimiento vincula a su compra correspondiente y especifica
--- la ubicación física donde se recibió el producto (distribución variada)
-INSERT INTO kardex (producto_id, ubicacion_id, tipo_movimiento, cantidad, saldo_anterior, saldo_actual, referencia_tabla, referencia_id, observacion) VALUES
--- COMPRA 1 (Apple) - TechSphere Central (ID 1)
-(1, 1, 'compra', 50, 0, 50, 'compras', 1, 'Stock Inicial'),
-(7, 1, 'compra', 20, 0, 20, 'compras', 1, 'Stock Inicial'),
-(19, 1, 'compra', 100, 0, 100, 'compras', 1, 'Stock Inicial'),
-(8, 1, 'compra', 30, 0, 30, 'compras', 1, 'Stock Inicial'),
-(32, 1, 'compra', 25, 0, 25, 'compras', 1, 'Stock Inicial'),
-(33, 1, 'compra', 20, 0, 20, 'compras', 1, 'Stock Inicial'),
-(34, 1, 'compra', 30, 0, 30, 'compras', 1, 'Stock Inicial'),
-(35, 1, 'compra', 50, 0, 50, 'compras', 1, 'Stock Inicial'),
-(30, 1, 'compra', 15, 0, 15, 'compras', 1, 'Stock Inicial'),
-(39, 1, 'compra', 40, 0, 40, 'compras', 1, 'Stock Inicial'),
-
--- COMPRA 2 (Samsung) - TechSphere La Paz (ID 2)
-(3, 2, 'compra', 35, 0, 35, 'compras', 2, 'Stock Inicial'),
-(4, 2, 'compra', 20, 0, 20, 'compras', 2, 'Stock Inicial'),
-(11, 2, 'compra', 15, 0, 15, 'compras', 2, 'Stock Inicial'),
-(22, 2, 'compra', 25, 0, 25, 'compras', 2, 'Stock Inicial'),
-(31, 2, 'compra', 20, 0, 20, 'compras', 2, 'Stock Inicial'),
-(9, 2, 'compra', 18, 0, 18, 'compras', 2, 'Stock Inicial'),
-(38, 2, 'compra', 20, 0, 20, 'compras', 2, 'Stock Inicial'),
-(2, 2, 'compra', 30, 0, 30, 'compras', 2, 'Stock Inicial'),
-(20, 2, 'compra', 25, 0, 25, 'compras', 2, 'Stock Inicial'),
-
--- COMPRA 3 (NVIDIA) - Almacén Principal (ID 4)
-(25, 4, 'compra', 2, 0, 2, 'compras', 3, 'Stock Inicial'),
-(26, 4, 'compra', 8, 0, 8, 'compras', 3, 'Stock Inicial'),
-(27, 4, 'compra', 3, 0, 3, 'compras', 3, 'Stock Inicial'),
-(10, 4, 'compra', 5, 0, 5, 'compras', 3, 'Stock Inicial'),
-(29, 4, 'compra', 2, 0, 2, 'compras', 3, 'Stock Inicial'),
-
--- COMPRA 4 (Global Tech) - TechSphere Cochabamba (ID 3)
-(13, 3, 'compra', 30, 0, 30, 'compras', 4, 'Stock Inicial'),
-(14, 3, 'compra', 15, 0, 15, 'compras', 4, 'Stock Inicial'),
-(15, 3, 'compra', 25, 0, 25, 'compras', 4, 'Stock Inicial'),
-(16, 3, 'compra', 20, 0, 20, 'compras', 4, 'Stock Inicial'),
-(17, 3, 'compra', 15, 0, 15, 'compras', 4, 'Stock Inicial'),
-(18, 3, 'compra', 30, 0, 30, 'compras', 4, 'Stock Inicial'),
-(21, 3, 'compra', 20, 0, 20, 'compras', 4, 'Stock Inicial'),
-(23, 3, 'compra', 35, 0, 35, 'compras', 4, 'Stock Inicial'),
-(24, 3, 'compra', 25, 0, 25, 'compras', 4, 'Stock Inicial'),
-(36, 3, 'compra', 20, 0, 20, 'compras', 4, 'Stock Inicial'),
-(37, 3, 'compra', 25, 0, 25, 'compras', 4, 'Stock Inicial'),
-(5, 3, 'compra', 15, 0, 15, 'compras', 4, 'Stock Inicial'),
-
--- COMPRA 5 (TechSphere Import) - TechSphere Central (ID 1)
-(6, 1, 'compra', 12, 0, 12, 'compras', 5, 'Stock Inicial'),
-(12, 1, 'compra', 8, 0, 8, 'compras', 5, 'Stock Inicial'),
-(28, 1, 'compra', 15, 0, 15, 'compras', 5, 'Stock Inicial'),
-(40, 1, 'compra', 40, 0, 40, 'compras', 5, 'Stock Inicial');
-
+INSERT INTO ventas (cliente_id, empleado_id, fecha, subtotal, total, estado, metodo_pago_id, direccion_id) VALUES 
+(1, 2, '2025-12-01 10:15:00', 1199.00, 1199.00, 'completada', 2, 9),
+(2, 3, '2025-12-01 14:30:00', 3499.00, 3499.00, 'completada', 2, 10),
+(3, 4, '2025-12-01 18:45:00', 249.00, 249.00, 'completada', 1, 11),  
+(4, 2, '2025-12-02 09:20:00', 1599.00, 1599.00, 'completada', 3, 12),
+(5, 3, '2025-12-02 11:10:00', 499.00, 499.00, 'completada', 4, 13),
+(6, 4, '2025-12-02 16:50:00', 1299.00, 1299.00, 'completada', 2, 14),  
+(7, 2, '2025-12-03 10:00:00', 598.00, 598.00, 'completada', 2, 15),
+(8, 3, '2025-12-03 13:20:00', 30000.00, 30000.00, 'completada', 3, 16),  
+(9, 4, '2025-12-04 15:00:00', 999.00, 999.00, 'completada', 1, 17),  
+(10, 2, '2025-12-04 17:30:00', 499.00, 499.00, 'completada', 2, 18),
+(11, 3, '2025-12-05 10:45:00', 3899.00, 3899.00, 'completada', 3, 19),
+(12, 4, '2025-12-05 12:15:00', 129.00, 129.00, 'completada', 1, 20), 
+(1, 2, '2025-12-05 19:00:00', 1199.00, 1199.00, 'completada', 2, 9),
+(2, 3, '2025-12-06 09:30:00', 799.00, 799.00, 'completada', 2, 10),
+(3, 4, '2025-12-06 14:20:00', 159.00, 159.00, 'completada', 4, 11), 
+(4, 2, '2025-12-06 16:40:00', 349.00, 349.00, 'completada', 1, 12),
+(5, 3, '2025-12-07 08:00:00', 25000.00, 25000.00, 'completada', 3, 13), 
+(6, 4, '2025-12-07 10:30:00', 229.00, 229.00, 'completada', 1, 14), 
+(7, 2, '2025-12-07 12:00:00', 1399.00, 1399.00, 'completada', 2, 15),
+(8, 3, '2025-12-07 13:15:00', 2199.00, 2199.00, 'completada', 2, 16); 
 
 -- ========================================
--- 11. INVENTARIO (40 productos, stock confirmado)
--- ========================================
--- Stock físico distribuido en las 4 ubicaciones. Cada cantidad coincide
--- EXACTAMENTE con su respectivo movimiento de kardex y detalle_compra.
--- La distribución refleja ubicación de recepción de cada compra.
-INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible, cantidad_reservada, cantidad_minima) VALUES 
--- Ubicación 1 (TechSphere Central) - 14 productos
-(1, 1, 50, 0, 5), (7, 1, 20, 0, 2), (19, 1, 100, 0, 10), (8, 1, 30, 0, 5), (32, 1, 25, 0, 4),
-(33, 1, 20, 0, 2), (34, 1, 30, 0, 5), (35, 1, 50, 0, 10), (30, 1, 15, 0, 3), (39, 1, 40, 0, 5),
-(6, 1, 12, 0, 2), (12, 1, 8, 0, 1), (28, 1, 15, 0, 2), (40, 1, 40, 0, 8),
-
--- Ubicación 2 (TechSphere La Paz) - 9 productos
-(3, 2, 35, 0, 5), (4, 2, 20, 0, 3), (11, 2, 15, 0, 2), (22, 2, 25, 0, 5), (31, 2, 20, 0, 4),
-(9, 2, 18, 0, 2), (38, 2, 20, 0, 5), (2, 2, 30, 0, 5), (20, 2, 25, 0, 4),
-
--- Ubicación 3 (TechSphere Cochabamba) - 13 productos
-(13, 3, 30, 0, 10), (14, 3, 15, 0, 5), (15, 3, 25, 0, 5), (16, 3, 20, 0, 3), (17, 3, 15, 0, 3),
-(18, 3, 30, 0, 5), (21, 3, 20, 0, 5), (23, 3, 35, 0, 7), (24, 3, 25, 0, 5), (36, 3, 20, 0, 4),
-(37, 3, 25, 0, 5), (5, 3, 15, 0, 3),
-
--- Ubicación 4 (Almacén Principal) - 4 productos de alto valor
-(25, 4, 2, 0, 0), (26, 4, 8, 0, 2), (27, 4, 3, 0, 1), (10, 4, 5, 0, 1), (29, 4, 2, 0, 0);
-
-
--- ========================================
--- 12. VENTAS HISTÓRICAS (01-07 DIC 2025)
--- ========================================
-INSERT INTO ventas (cliente_id, empleado_id, fecha, subtotal, total, estado, metodo_pago_id) VALUES 
-(1, 2, '2025-12-01 10:15:00', 1199.00, 1199.00, 'completada', 2),
-(2, 3, '2025-12-01 14:30:00', 3499.00, 3499.00, 'completada', 2),
-(3, 4, '2025-12-01 18:45:00', 249.00, 249.00, 'completada', 1),  
-(4, 2, '2025-12-02 09:20:00', 1599.00, 1599.00, 'completada', 3),
-(5, 3, '2025-12-02 11:10:00', 499.00, 499.00, 'completada', 4),
-(6, 4, '2025-12-02 16:50:00', 1299.00, 1299.00, 'completada', 2),  
-(7, 2, '2025-12-03 10:00:00', 598.00, 598.00, 'completada', 2),
-(8, 3, '2025-12-03 13:20:00', 30000.00, 30000.00, 'completada', 3),  
-(9, 4, '2025-12-04 15:00:00', 999.00, 999.00, 'completada', 1),  
-(10, 2, '2025-12-04 17:30:00', 499.00, 499.00, 'completada', 2),
-(11, 3, '2025-12-05 10:45:00', 3899.00, 3899.00, 'completada', 3),
-(12, 4, '2025-12-05 12:15:00', 129.00, 129.00, 'completada', 1), 
-(1, 2, '2025-12-05 19:00:00', 1199.00, 1199.00, 'completada', 2),
-(2, 3, '2025-12-06 09:30:00', 799.00, 799.00, 'completada', 2),
-(3, 4, '2025-12-06 14:20:00', 159.00, 159.00, 'completada', 4), 
-(4, 2, '2025-12-06 16:40:00', 349.00, 349.00, 'completada', 1),
-(5, 3, '2025-12-07 08:00:00', 25000.00, 25000.00, 'completada', 3), 
-(6, 4, '2025-12-07 10:30:00', 229.00, 229.00, 'completada', 1), 
-(7, 2, '2025-12-07 12:00:00', 1399.00, 1399.00, 'completada', 2),
-(8, 3, '2025-12-07 13:15:00', 2199.00, 2199.00, 'completada', 2); 
-
--- ========================================
--- 13. DETALLES_DE_VENTA (con ubicación de origen)
+-- 12. DETALLES_DE_VENTA (con ubicación de origen)
 -- ========================================
 -- Cada línea de venta registra desde qué ubicación física se despachó el producto.
 -- La ubicación_id se extrae del inventario donde el producto estaba disponible.
@@ -461,17 +378,7 @@ INSERT INTO detalles_venta (venta_id, producto_id, ubicacion_id, cantidad, preci
 
 
 -- ========================================
--- 14. ENVÍOS
--- ========================================
-INSERT INTO envios (venta_id, direccion_id, courier, numero_guia, costo, estado, fecha_envio, fecha_entrega) VALUES
-(1, 9, 'FedEx', 'TRACK-001', 15.00, 'entregado', '2025-12-01 12:00:00', '2025-12-02 10:00:00'),
-(2, 10, 'DHL', 'TRACK-002', 25.00, 'entregado', '2025-12-01 16:00:00', '2025-12-03 14:00:00'),
-(4, 12, 'FedEx', 'TRACK-003', 10.00, 'entregado', '2025-12-02 15:00:00', '2025-12-03 12:00:00'),
-(17, 13, 'Security Transport', 'SECURE-001', 500.00, 'entregado', '2025-12-07 09:00:00', '2025-12-07 18:00:00');
-
-
--- ========================================
--- 15. REVIEWS (25 reviews usando solo productos IDs 1-40)
+-- 14. REVIEWS (25 reviews usando solo productos IDs 1-40)
 -- ========================================
 INSERT INTO reviews (producto_id, cliente_id, calificacion, comentario, verificado) VALUES
 (1, 1, 5, 'La cámara es una locura, las fotos salen increíbles.', true),
