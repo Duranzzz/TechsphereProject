@@ -6,7 +6,7 @@ export async function GET(request) {
         const search = searchParams.get('search') || '';
 
         let sql = `
-            SELECT clientes.id, clientes.nombre, clientes.apellido, clientes.telefono, clientes.tipo, users.email 
+            SELECT clientes.id, clientes.nombre, clientes.apellido, clientes.telefono, clientes.tipo, clientes.user_id, users.email 
             FROM clientes 
             LEFT JOIN users ON clientes.user_id = users.id
             WHERE clientes.activo = true

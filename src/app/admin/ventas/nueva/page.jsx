@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { Search, Plus, Trash2, User, ShoppingCart, Save, Package, Minus, LogOut, CreditCard } from "lucide-react";
+import { Search, Plus, Trash2, User, ShoppingCart, Save, Package, Minus, LogOut, CreditCard, MapPin } from "lucide-react";
 import { toast } from "sonner";
 
 const queryClient = new QueryClient();
@@ -14,6 +14,9 @@ function POSPage() {
     const [clientSearch, setClientSearch] = useState("");
     const [selectedClient, setSelectedClient] = useState(null);
     const [selectedMetodoPago, setSelectedMetodoPago] = useState("1");
+    const [direccionesCliente, setDireccionesCliente] = useState([]);
+    const [selectedDireccion, setSelectedDireccion] = useState("");
+    const [isClientInputFocused, setIsClientInputFocused] = useState(false);
     const [loading, setLoading] = useState(false);
     const { user, logout } = useAuth();
 
@@ -47,6 +50,27 @@ function POSPage() {
         }
     });
 
+    // Fetch direcciones cuando se selecciona un cliente
+    useEffect(() => {
+        if (selectedClient?.user_id) {
+            fetch(`/api/cliente/direcciones?user_id=${selectedClient.user_id}`)
+                .then(res => res.json())
+                .then(data => {
+                    setDireccionesCliente(data || []);
+                    if (data && data.length > 0) {
+                        setSelectedDireccion(data[0].id);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching direcciones:', err);
+                    setDireccionesCliente([]);
+                });
+        } else {
+            setDireccionesCliente([]);
+            setSelectedDireccion("");
+        }
+    }, [selectedClient]);
+
     const addToCart = (product) => {
         setCart(prev => {
             const existing = prev.find(item => item.id === product.id);
@@ -71,6 +95,7 @@ function POSPage() {
     const handleSubmit = async () => {
         if (cart.length === 0) return toast.error("El carrito está vacío");
         if (!selectedClient) return toast.error("Seleccione un cliente");
+        if (!selectedDireccion) return toast.error("Seleccione una dirección de envío");
         if (!user?.empleado_id) return toast.error("Error: No se identificó al vendedor (Ud).");
         if (!selectedMetodoPago) return toast.error("Seleccione un método de pago");
 
@@ -83,8 +108,9 @@ function POSPage() {
                     cliente: { id: selectedClient.id },
                     productos: cart.map(item => ({ id: item.id, cantidad: item.cantidad })),
                     empleado_id: user.empleado_id,
-                    metodo_pago: selectedMetodoPago
-                    // ubicacion_id se maneja autom. en backend
+                    metodo_pago: selectedMetodoPago,
+                    direccion_id: selectedDireccion
+                    // ubicacion_id se maneja autom. en backend por trigger
                 })
             });
 
@@ -94,6 +120,8 @@ function POSPage() {
                 setSelectedClient(null);
                 setClientSearch("");
                 setSelectedMetodoPago("1");
+                setDireccionesCliente([]);
+                setSelectedDireccion("");
             } else {
                 const error = await res.json();
                 toast.error("Error: " + error.error);
@@ -261,14 +289,17 @@ function POSPage() {
                                 ) : (
                                     <div className="relative group">
                                         <input
-                                            placeholder="Buscar cliente (Nombre/Tel)..."
+                                            placeholder="Buscar cliente (Nombre/Tel) o ver todos..."
                                             className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all placeholder-gray-600"
                                             value={clientSearch}
                                             onChange={e => setClientSearch(e.target.value)}
+                                            onFocus={() => setIsClientInputFocused(true)}
+                                            onBlur={() => setTimeout(() => setIsClientInputFocused(false), 200)}
                                         />
                                         <Search className="absolute right-4 top-3 h-4 w-4 text-gray-500" />
 
-                                        {clientSearch.length > 0 && clientes.length > 0 && (
+                                        {/* Mostrar dropdown solo cuando input está en focus */}
+                                        {isClientInputFocused && clientes.length > 0 && (
                                             <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-white/10 rounded-xl shadow-2xl z-50 max-h-60 overflow-y-auto overflow-x-hidden custom-scrollbar">
                                                 {clientes.map(c => (
                                                     <button
@@ -308,9 +339,29 @@ function POSPage() {
                                     </select>
                                 </div>
 
+                                {/* Dirección de Envío */}
+                                {direccionesCliente.length > 0 && (
+                                    <div className="pt-2">
+                                        <label className="block text-xs font-medium text-blue-200/60 mb-1 ml-1 uppercase tracking-wider flex items-center gap-1">
+                                            <MapPin className="h-3 w-3" /> Dirección de Envío
+                                        </label>
+                                        <select
+                                            className="w-full bg-slate-900/50 border border-white/10 rounded-xl px-3 py-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all appearance-none cursor-pointer hover:bg-white/5"
+                                            value={selectedDireccion}
+                                            onChange={e => setSelectedDireccion(e.target.value)}
+                                        >
+                                            {direccionesCliente.map(dir => (
+                                                <option key={dir.id} value={dir.id} className="bg-slate-900 text-white py-2">
+                                                    {dir.calle}, {dir.ciudad} - {dir.estado}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={loading || cart.length === 0 || !selectedClient || !user?.empleado_id}
+                                    disabled={loading || cart.length === 0 || !selectedClient || !selectedDireccion || !user?.empleado_id}
                                     className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold shadow-lg shadow-purple-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                                 >
                                     <Save className="h-5 w-5" />

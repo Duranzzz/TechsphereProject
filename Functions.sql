@@ -191,14 +191,32 @@ EXECUTE FUNCTION crear_envio_automatico();
 -----------------------------------------------------------------
 
 
--- A. Trigger para VENTAS (Resta Stock)
+-- A. Trigger para VENTAS (Resta Stock - selecciona ubicación con más stock automáticamente)
 CREATE OR REPLACE FUNCTION restar_stock_venta()
 RETURNS TRIGGER AS $$
+DECLARE
+    v_ubicacion_id INTEGER;
+    v_stock_disponible INTEGER;
 BEGIN
+    -- Seleccionar ubicación con MÁS stock disponible de este producto
+    SELECT ubicacion_id, cantidad_disponible INTO v_ubicacion_id, v_stock_disponible
+    FROM inventario
+    WHERE producto_id = NEW.producto_id
+      AND cantidad_disponible >= NEW.cantidad
+    ORDER BY cantidad_disponible DESC
+    LIMIT 1;
+    
+    -- Si no hay stock suficiente en ninguna ubicación, error
+    IF v_ubicacion_id IS NULL THEN
+        RAISE EXCEPTION 'Stock insuficiente para producto ID % (se requieren % unidades)', NEW.producto_id, NEW.cantidad;
+    END IF;
+    
+    -- Descontar de esa ubicación
     UPDATE inventario 
     SET cantidad_disponible = cantidad_disponible - NEW.cantidad,
         ultima_actualizacion = NOW()
-    WHERE producto_id = NEW.producto_id AND ubicacion_id = NEW.ubicacion_id;
+    WHERE producto_id = NEW.producto_id 
+      AND ubicacion_id = v_ubicacion_id;
     
     RETURN NEW;
 END;

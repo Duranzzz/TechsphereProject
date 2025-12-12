@@ -67,12 +67,19 @@ export default function CheckoutPage() {
         setLoading(true);
 
         try {
+            // Primero obtener el cliente_id del usuario logueado
+            const clienteRes = await fetch(`/api/cliente/${user.id}`);
+            if (!clienteRes.ok) {
+                throw new Error('No se pudo obtener información del cliente');
+            }
+            const clienteData = await clienteRes.json();
+
             const res = await fetch('/api/ventas', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     cliente: {
-                        id: user.id,
+                        id: clienteData.id, // ID de la tabla clientes, NO users
                         nombre: user.nombre,
                         email: user.email,
                     },

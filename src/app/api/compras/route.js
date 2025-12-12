@@ -37,7 +37,9 @@ export async function POST(request) {
             `INSERT INTO compras (proveedor_id, ubicacion_id, numero_factura, fecha_compra, total, estado)
              VALUES ($1, $2, $3, $4, $5, 'completada')
              RETURNING id`,
-            [proveedor_id, ubicacion_id, numero_factura, fecha_compra || new Date(), total]
+            [proveedor_id, ubicacion_id, numero_factura,
+                fecha_compra ? `${fecha_compra}T${new Date().toTimeString().slice(0, 8)}` : new Date(),
+                total]
         );
         const compraId = compraRes.rows[0].id;
 
