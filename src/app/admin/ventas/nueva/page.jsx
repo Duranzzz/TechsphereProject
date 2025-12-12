@@ -141,22 +141,37 @@ function POSPage() {
         <div className="min-h-screen p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center gap-4 mb-8">
-                    <button
-                        onClick={async () => {
-                            await logout();
-                            window.location.href = '/';
-                        }}
-                        className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl transition-colors border border-white/10 group bg-rose-500/10"
-                        title="Cerrar Sesión"
-                    >
-                        <LogOut className="h-6 w-6 text-rose-400 group-hover:text-rose-500" />
-                    </button>
+                    <div className="w-1 h-16 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden ring-4 ring-blue-500/30 flex-shrink-0">
+                        {user?.foto_url ? (
+                            <img
+                                src={user.foto_url}
+                                alt={user.nombre}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    e.target.style.display = 'none';
+                                }}
+                            />
+                        ) : (
+                            <User className="h-8 w-8 text-white" />
+                        )}
+                    </div>
                     <div>
                         <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
                             Nueva Venta
                         </h1>
                         <p className="text-blue-200/60 text-sm">Punto de Venta - Vendedor: {user?.nombre || '...'}</p>
                     </div>
+                    <button
+                        onClick={async () => {
+                            await logout();
+                            window.location.href = '/';
+                        }}
+                        className="ml-auto p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl transition-colors border border-white/10 group bg-rose-500/10"
+                        title="Cerrar Sesión"
+                    >
+                        <LogOut className="h-6 w-6 text-rose-400 group-hover:text-rose-500" />
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

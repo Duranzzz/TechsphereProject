@@ -91,12 +91,15 @@ export async function PUT(request) {
         }
 
         // 2. Manejo de Actualización de Perfil
-        const { user_id, nombre, apellido, email, telefono, calle, ciudad, estado, pais } = body;
+        const { user_id, nombre, apellido, email, telefono, calle, ciudad, estado, pais, foto_url } = body;
 
         await client.query('BEGIN'); // Iniciar Transacción
 
-        // Actualizar tabla users
-        await client.query('UPDATE users SET nombre = $1, email = $2 WHERE id = $3', [nombre, email, user_id]);
+        // Actualizar tabla users (incluye foto_url ahora)
+        await client.query(
+            'UPDATE users SET nombre = $1, email = $2, foto_url = $3 WHERE id = $4',
+            [nombre, email, foto_url || null, user_id]
+        );
 
         // Buscar cliente y dirección actual
         const clienteRes = await client.query(`

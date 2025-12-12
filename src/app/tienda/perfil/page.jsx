@@ -6,7 +6,7 @@ import { useNavigate, Link } from "react-router";
 import {
     User, Lock, ShieldAlert, LogOut, ShoppingBag,
     DollarSign, Star, ArrowLeft, Save, Eye, EyeOff,
-    CreditCard, Clock, Activity, MapPin, Plus, Trash2, CheckCircle
+    CreditCard, Clock, Activity, MapPin, Plus, Trash2, CheckCircle, Edit
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,7 +30,8 @@ export default function ProfilePage() {
         calle: "",
         ciudad: "",
         estado: "",
-        pais: "Bolivia"
+        pais: "Bolivia",
+        foto_url: ""
     });
     const [passwordData, setPasswordData] = useState({ current_password: "", new_password: "", confirm_password: "" });
     const [deactivatePassword, setDeactivatePassword] = useState("");
@@ -38,6 +39,7 @@ export default function ProfilePage() {
     // Address state
     const [addresses, setAddresses] = useState([]);
     const [showAddressModal, setShowAddressModal] = useState(false);
+    const [editingAddress, setEditingAddress] = useState(null);
     const [addressForm, setAddressForm] = useState({ alias: "", calle: "", ciudad: "", estado: "", pais: "Bolivia", es_principal: false });
 
     // Reviews state
@@ -75,7 +77,8 @@ export default function ProfilePage() {
                     calle: data.profile.calle || "",
                     ciudad: data.profile.ciudad || "",
                     estado: data.profile.estado || "",
-                    pais: data.profile.pais || "Bolivia"
+                    pais: data.profile.pais || "Bolivia",
+                    foto_url: data.profile.foto_url || ""
                 });
             }
             setProfileLoading(false);
@@ -152,6 +155,46 @@ export default function ProfilePage() {
                 fetchProfile(); // Update summary
             } else {
                 toast.error("Error al actualizar");
+            }
+        } catch (error) {
+            toast.error(error.message);
+        }
+    };
+
+    const handleEditAddress = (address) => {
+        setEditingAddress(address);
+        setAddressForm({
+            alias: address.alias || "",
+            calle: address.calle,
+            ciudad: address.ciudad,
+            estado: address.estado,
+            pais: address.pais || "Bolivia",
+            es_principal: address.es_principal
+        });
+        setShowAddressModal(true);
+    };
+
+    const handleUpdateAddress = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`/api/cliente/direcciones/${editingAddress.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    user_id: user.id,
+                    action: "update",
+                    ...addressForm
+                })
+            });
+            if (res.ok) {
+                toast.success("Dirección actualizada");
+                setShowAddressModal(false);
+                setEditingAddress(null);
+                setAddressForm({ alias: "", calle: "", ciudad: "", estado: "", pais: "Bolivia", es_principal: false });
+                fetchAddresses();
+                fetchProfile();
+            } else {
+                toast.error("Error al actualizar dirección");
             }
         } catch (error) {
             toast.error(error.message);
@@ -303,16 +346,27 @@ export default function ProfilePage() {
                     <div className="w-full lg:w-72 flex-shrink-0 space-y-4">
                         <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/5">
                             <div className="flex items-center gap-4 mb-6">
-                                <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 p-[2px]">
-                                    <div className="h-full w-full rounded-full bg-[#0B1120] flex items-center justify-center">
-                                        <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                                            {profileData?.nombre?.charAt(0) || "U"}
-                                        </span>
+                                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 p-[2px] flex-shrink-0">
+                                    <div className="h-full w-full rounded-full overflow-hidden bg-[#0B1120] flex items-center justify-center">
+                                        {profileData?.foto_url ? (
+                                            <img
+                                                src={profileData.foto_url}
+                                                alt={profileData.nombre}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
+                                                {profileData?.nombre?.charAt(0) || "U"}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-white">{profileData?.nombre}</h3>
-                                    <p className="text-sm text-gray-500 truncate max-w-[150px]">{profileData?.email}</p>
+                                    <h3 className="font-semibold text-white text-lg">{profileData?.nombre}</h3>
+                                    <p className="text-xs text-gray-500">Cuenta Cliente</p>
                                 </div>
                             </div>
 
@@ -526,11 +580,29 @@ export default function ProfilePage() {
                                 {/* Update Details Form */}
                                 <div className="bg-white/5 backdrop-blur-lg rounded-3xl border border-white/5 overflow-hidden">
                                     <div className="px-8 py-6 border-b border-white/5 bg-white/[0.02]">
-                                        <h3 className="font-bold text-white text-lg flex items-center gap-2">
-                                            <User className="h-5 w-5 text-blue-400" />
-                                            Datos Personales
-                                        </h3>
-                                        <p className="text-gray-500 text-sm mt-1">Actualiza tu información de contacto y dirección</p>
+                                        <div className="flex items-center gap-6 mb-4">
+                                            <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center ring-4 ring-blue-500/20 flex-shrink-0">
+                                                {profileData?.foto_url ? (
+                                                    <img
+                                                        src={profileData.foto_url}
+                                                        alt={profileData.nombre}
+                                                        className="w-full h-full object-cover"
+                                                        onError={(e) => {
+                                                            e.target.style.display = 'none';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <User className="h-10 w-10 text-white" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                                                    <User className="h-5 w-5 text-blue-400" />
+                                                    Datos Personales
+                                                </h3>
+                                                <p className="text-gray-500 text-sm mt-1">Actualiza tu información de contacto y dirección</p>
+                                            </div>
+                                        </div>
                                     </div>
                                     <form onSubmit={handleUpdateProfile} className="p-8 space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -560,6 +632,17 @@ export default function ProfilePage() {
                                                     value={formData.email}
                                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                                 />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-400 ml-1">Foto de Perfil (URL)</label>
+                                                <input
+                                                    type="url"
+                                                    className="w-full bg-[#0B1120] border border-gray-700/50 rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-600"
+                                                    value={formData.foto_url}
+                                                    onChange={e => setFormData({ ...formData, foto_url: e.target.value })}
+                                                    placeholder="https://ejemplo.com/mi-foto.jpg"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">Ingresa la URL de tu foto de perfil</p>
                                             </div>
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium text-gray-400 ml-1">Teléfono</label>
@@ -753,7 +836,11 @@ export default function ProfilePage() {
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-xl font-bold text-white">Mis Direcciones</h3>
                                     <button
-                                        onClick={() => setShowAddressModal(true)}
+                                        onClick={() => {
+                                            setEditingAddress(null);
+                                            setAddressForm({ alias: "", calle: "", ciudad: "", estado: "", pais: "Bolivia", es_principal: false });
+                                            setShowAddressModal(true);
+                                        }}
                                         className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
                                     >
                                         <Plus className="h-4 w-4" /> Nueva Dirección
@@ -777,6 +864,13 @@ export default function ProfilePage() {
                                                     <p className="text-gray-400 text-sm">{addr.ciudad}, {addr.estado}, {addr.pais}</p>
                                                 </div>
                                                 <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEditAddress(addr)}
+                                                        className="p-2 text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                        title="Editar dirección"
+                                                    >
+                                                        <Edit className="h-5 w-5" />
+                                                    </button>
                                                     {!addr.es_principal && (
                                                         <>
                                                             <button
@@ -824,9 +918,9 @@ export default function ProfilePage() {
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </button>
 
-                        <h3 className="text-2xl font-bold text-white mb-6">Nueva Dirección</h3>
+                        <h3 className="text-2xl font-bold text-white mb-6">{editingAddress ? 'Editar Dirección' : 'Nueva Dirección'}</h3>
 
-                        <form onSubmit={handleAddAddress} className="space-y-6">
+                        <form onSubmit={editingAddress ? handleUpdateAddress : handleAddAddress} className="space-y-6">
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-2">Alias (Ej: Casa, Trabajo)</label>
                                 <input
@@ -888,7 +982,7 @@ export default function ProfilePage() {
                                 type="submit"
                                 className="w-full px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
                             >
-                                Guardar Dirección
+                                {editingAddress ? 'Actualizar Dirección' : 'Guardar Dirección'}
                             </button>
                         </form>
                     </div>

@@ -154,7 +154,7 @@ export default function NuevaCompraPage() {
                 </div>
             )}
 
-            <div className="flex gap-6 flex-1 min-h-0">
+            <div className="flex gap-6 flex-1 items-start">
                 {/* Left Column: Form & Product Selection */}
                 <div className="w-1/2 flex flex-col gap-6 min-h-0">
                     {/* Purchase Details */}
@@ -231,12 +231,31 @@ export default function NuevaCompraPage() {
                                 <button
                                     key={producto.id}
                                     onClick={() => addToCart(producto)}
-                                    className="w-full flex items-center justify-between p-4 hover:bg-white/5 rounded-xl transition-all group text-left border border-transparent hover:border-white/5"
+                                    className="w-full flex items-center gap-4 p-4 hover:bg-white/5 rounded-xl transition-all group text-left border border-transparent hover:border-white/5"
                                 >
-                                    <div>
+                                    {/* Product Image */}
+                                    <div className="w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                        {producto.imagen_url ? (
+                                            <img
+                                                src={producto.imagen_url}
+                                                alt={producto.nombre}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.target.style.display = 'none';
+                                                }}
+                                            />
+                                        ) : (
+                                            <ShoppingCart className="h-6 w-6 text-gray-500" />
+                                        )}
+                                    </div>
+
+                                    {/* Product Info */}
+                                    <div className="flex-1">
                                         <div className="text-white font-medium text-lg">{producto.nombre}</div>
                                         <div className="text-sm text-blue-200/60 mt-1">SKU: {producto.sku || '-'} | Stock: {producto.stock}</div>
                                     </div>
+
+                                    {/* Add Button */}
                                     <div className="bg-blue-500/20 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                         <Plus className="h-5 w-5 text-blue-400" />
                                     </div>
@@ -247,7 +266,7 @@ export default function NuevaCompraPage() {
                 </div>
 
                 {/* Right Column: Cart */}
-                <div className="w-1/2 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/10 flex flex-col min-h-0 shadow-xl overflow-hidden">
+                <div className="w-1/2 bg-white/10 backdrop-blur-xl rounded-3xl border border-white/10 flex flex-col shadow-xl overflow-hidden sticky top-6 h-fit max-h-[calc(100vh-3rem)]">
                     <div className="p-6 border-b border-white/10 bg-black/20 flex justify-between items-center">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <ShoppingCart className="h-6 w-6 text-blue-400" />

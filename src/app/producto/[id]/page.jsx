@@ -19,6 +19,10 @@ export default function ProductDetail() {
     const [loading, setLoading] = useState(true);
     const [newReview, setNewReview] = useState({ calificacion: 5, comentario: '' });
     const [submittingReview, setSubmittingReview] = useState(false);
+    const [hasPurchased, setHasPurchased] = useState(false);
+    const [checkingPurchase, setCheckingPurchase] = useState(false);
+    const [existingReview, setExistingReview] = useState(null);
+    const [isEditingReview, setIsEditingReview] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -41,6 +45,57 @@ export default function ProductDetail() {
         fetchData();
     }, [id]);
 
+    // Check if user has purchased this product
+    useEffect(() => {
+        const checkPurchase = async () => {
+            if (!user?.id) {
+                setHasPurchased(false);
+                return;
+            }
+            setCheckingPurchase(true);
+            try {
+                const res = await fetch(`/api/products/${id}/has-purchased?user_id=${user.id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setHasPurchased(data.hasPurchased);
+                }
+            } catch (error) {
+                console.error('Error checking purchase:', error);
+            } finally {
+                setCheckingPurchase(false);
+            }
+        };
+        checkPurchase();
+    }, [id, user]);
+
+    // Check if user has existing review for this product
+    useEffect(() => {
+        const checkExistingReview = async () => {
+            if (!user?.id) {
+                setExistingReview(null);
+                setIsEditingReview(false);
+                return;
+            }
+            try {
+                const res = await fetch(`/api/products/${id}/user-review?user_id=${user.id}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.review) {
+                        setExistingReview(data.review);
+                        setIsEditingReview(true);
+                        setNewReview({
+                            calificacion: data.review.calificacion,
+                            comentario: data.review.comentario
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking existing review:', error);
+            }
+        };
+        checkExistingReview();
+    }, [id, user]);
+
     const handleAddToCart = () => {
         if (!product) return;
         addToCart(product); // Usamos la función del contexto que ya maneja todo
@@ -53,6 +108,10 @@ export default function ProductDetail() {
         if (!user) {
             toast.error('Debes iniciar sesión para dejar una reseña');
             navigate('/login');
+            return;
+        }
+        if (!hasPurchased) {
+            toast.error('Solo puedes reseñar productos que has comprado');
             return;
         }
         setSubmittingReview(true);
@@ -68,13 +127,60 @@ export default function ProductDetail() {
                 setNewReview({ calificacion: 5, comentario: '' });
                 const revRes = await fetch(`/api/products/${id}/reviews`);
                 if (revRes.ok) setReviews(await revRes.json());
+                // Set editing mode for newly created review
+                setIsEditingReview(true);
             } else {
-                throw new Error('Error al publicar');
+                const data = await res.json();
+                if (res.status === 403) {
+                    toast.error(data.error || 'No tienes permiso para reseñar este producto');
+                } else {
+                    throw new Error('Error al publicar');
+                }
             }
         } catch (error) {
             toast.error('Error al publicar reseña');
         } finally {
             setSubmittingReview(false);
+        }
+    };
+
+    const handleUpdateReview = async (e) => {
+        e.preventDefault();
+        setSubmittingReview(true);
+        try {
+            const res = await fetch(`/api/products/${id}/reviews`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...newReview, userId: user.id }),
+            });
+
+            if (res.ok) {
+                toast.success('Reseña actualizada');
+                // Refresh reviews list
+                const revRes = await fetch(`/api/products/${id}/reviews`);
+                if (revRes.ok) setReviews(await revRes.json());
+                // Update existing review state
+                setExistingReview({ ...existingReview, ...newReview });
+            } else {
+                const data = await res.json();
+                toast.error(data.error || 'Error al actualizar reseña');
+            }
+        } catch (error) {
+            toast.error('Error al actualizar reseña');
+        } finally {
+            setSubmittingReview(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        // Restore original review data instead of clearing
+        if (existingReview) {
+            setNewReview({
+                calificacion: existingReview.calificacion,
+                comentario: existingReview.comentario
+            });
+            // Keep editing mode active
+            setIsEditingReview(true);
         }
     };
 
@@ -308,44 +414,74 @@ export default function ProductDetail() {
                         <div className="lg:col-span-5">
                             <div className="sticky top-24 bg-[#1A2035]/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl">
                                 <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                    Escribir una reseña
+                                    {isEditingReview ? (
+                                        <>
+                                            <Star className="h-5 w-5 text-yellow-400" />
+                                            Editar mi reseña
+                                        </>
+                                    ) : (
+                                        'Escribir una reseña'
+                                    )}
                                 </h3>
                                 {user ? (
-                                    <form onSubmit={handleSubmitReview} className="space-y-6">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-3">Calificación General</label>
-                                            <div className="flex gap-3">
-                                                {[1, 2, 3, 4, 5].map((star) => (
-                                                    <button
-                                                        key={star}
-                                                        type="button"
-                                                        onClick={() => setNewReview({ ...newReview, calificacion: star })}
-                                                        className={`text-3xl focus:outline-none transition-transform hover:scale-110 ${star <= newReview.calificacion ? 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'text-gray-700'
-                                                            }`}
-                                                    >
-                                                        ★
-                                                    </button>
-                                                ))}
+                                    !hasPurchased ? (
+                                        <div className="text-center py-8 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
+                                            <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-500/20 rounded-full mb-4">
+                                                <ShoppingCart className="h-8 w-8 text-orange-400" />
                                             </div>
+                                            <h4 className="text-orange-400 font-bold text-lg mb-2">Compra este producto primero</h4>
+                                            <p className="text-gray-400 text-sm px-4">Solo clientes que han comprado este producto pueden dejar reseñas verificadas</p>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Tu comentario</label>
-                                            <textarea
-                                                value={newReview.comentario}
-                                                onChange={(e) => setNewReview({ ...newReview, comentario: e.target.value })}
-                                                className="w-full bg-[#0B1120] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all resize-none h-32"
-                                                placeholder="¿Qué te pareció el producto?"
-                                                required
-                                            />
-                                        </div>
-                                        <button
-                                            type="submit"
-                                            disabled={submittingReview}
-                                            className="w-full bg-white text-[#0B1120] px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            {submittingReview ? 'Publicando...' : 'Publicar mi opinión'}
-                                        </button>
-                                    </form>
+                                    ) : (
+                                        <>
+                                            <form onSubmit={isEditingReview ? handleUpdateReview : handleSubmitReview} className="space-y-6">
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-400 mb-3">Calificación General</label>
+                                                    <div className="flex gap-3">
+                                                        {[1, 2, 3, 4, 5].map((star) => (
+                                                            <button
+                                                                key={star}
+                                                                type="button"
+                                                                onClick={() => setNewReview({ ...newReview, calificacion: star })}
+                                                                className={`text-3xl focus:outline-none transition-transform hover:scale-110 ${star <= newReview.calificacion ? 'text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 'text-gray-700'
+                                                                    }`}
+                                                            >
+                                                                ★
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-sm font-medium text-gray-400 mb-2">Tu comentario</label>
+                                                    <textarea
+                                                        value={newReview.comentario}
+                                                        onChange={(e) => setNewReview({ ...newReview, comentario: e.target.value })}
+                                                        className="w-full bg-[#0B1120] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all resize-none h-32"
+                                                        placeholder="¿Qué te pareció el producto?"
+                                                        required
+                                                    />
+                                                </div>
+                                                <button
+                                                    type="submit"
+                                                    disabled={submittingReview}
+                                                    className="w-full bg-white text-[#0B1120] px-6 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {submittingReview
+                                                        ? (isEditingReview ? 'Actualizando...' : 'Publicando...')
+                                                        : (isEditingReview ? 'Actualizar mi reseña' : 'Publicar mi opinión')
+                                                    }
+                                                </button>
+                                            </form>
+                                            {isEditingReview && (
+                                                <button
+                                                    onClick={handleCancelEdit}
+                                                    className="w-full mt-3 text-sm text-gray-400 hover:text-white transition-colors py-2"
+                                                >
+                                                    ← Cancelar edición
+                                                </button>
+                                            )}
+                                        </>
+                                    )
                                 ) : (
                                     <div className="text-center py-12 rounded-2xl border border-dashed border-white/10 bg-white/5">
                                         <p className="text-gray-400 mb-6 px-4">Inicia sesión para compartir tu experiencia con la comunidad.</p>

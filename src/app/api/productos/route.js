@@ -69,24 +69,22 @@ export async function POST(request) {
       descripcion,
       precio,
       precio_costo,
-      stock,
       cantidad_minima,
       dias_garantia,
       categoria_id,
       marca_id,
       sku,
       imagen_url,
+      activo
     } = body;
 
     if (!nombre || !precio) {
       return Response.json({ error: "Nombre y precio son requeridos" }, { status: 400 });
     }
 
-    // Insert product
-    const productRes = await query(`
-      INSERT INTO productos (nombre, descripcion, precio, precio_costo, categoria_id, marca_id, sku, imagen_url, cantidad_minima, dias_garantia)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING *
+    // Llamar a función SQL crear_producto()
+    const result = await query(`
+      SELECT crear_producto($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as id
     `, [
       nombre,
       descripcion || '',
@@ -97,12 +95,17 @@ export async function POST(request) {
       sku || null,
       imagen_url || null,
       cantidad_minima || 5,
-      dias_garantia || 365
+      dias_garantia || 365,
+      activo !== undefined ? activo : true
     ]);
 
-    const newProduct = productRes.rows[0];
+    const productoId = result.rows[0].id;
 
-    return Response.json({ ...newProduct, stock: 0, cantidad_minima, dias_garantia });
+    return Response.json({
+      id: productoId,
+      nombre,
+      mensaje: 'Producto creado exitosamente'
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating producto:", error);
     return Response.json({ error: error.message || "Error creating producto" }, { status: 500 });
@@ -127,23 +130,11 @@ export async function PUT(request) {
       activo
     } = body;
 
-    const productRes = await query(`
-      UPDATE productos
-      SET
-        nombre = $1,
-        descripcion = $2,
-        precio = $3,
-        precio_costo = $4,
-        categoria_id = $5,
-        marca_id = $6,
-        sku = $7,
-        imagen_url = $8,
-        activo = $9,
-        cantidad_minima = $10,
-        dias_garantia = $11
-      WHERE id = $12
-      RETURNING *
+    // Llamar a función SQL actualizar_producto()
+    await query(`
+      SELECT actualizar_producto($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     `, [
+      id,
       nombre,
       descripcion,
       precio,
@@ -152,35 +143,15 @@ export async function PUT(request) {
       marca_id,
       sku,
       imagen_url,
-      activo,
       cantidad_minima,
       dias_garantia,
-      id
+      activo
     ]);
 
-    // Update inventory (simplification: update all locations or just the first one found)
-    // We'll update the inventory for the first location found for this product, or insert if not exists
-    const locRes = await query('SELECT id FROM ubicaciones LIMIT 1');
-    const locationId = locRes.rows.length > 0 ? locRes.rows[0].id : 1;
-
-    // Check if inventory exists
-    const invCheck = await query('SELECT id FROM inventario WHERE producto_id = $1 AND ubicacion_id = $2', [id, locationId]);
-
-    if (invCheck.rows.length > 0) {
-      // Don't update stock on product edit, only metadata
-      await query(`
-            UPDATE inventario 
-            SET cantidad_minima = $1
-            WHERE producto_id = $2 AND ubicacion_id = $3
-        `, [cantidad_minima, id, locationId]);
-    } else {
-      await query(`
-            INSERT INTO inventario (producto_id, ubicacion_id, cantidad_disponible, cantidad_minima)
-            VALUES ($1, $2, 0, $3)
-        `, [id, locationId, cantidad_minima]);
-    }
-
-    return Response.json({ ...productRes.rows[0], cantidad_minima, dias_garantia });
+    return Response.json({
+      id,
+      mensaje: 'Producto actualizado exitosamente'
+    });
   } catch (error) {
     console.error("Error updating producto:", error);
     return Response.json({ error: "Error updating producto" }, { status: 500 });

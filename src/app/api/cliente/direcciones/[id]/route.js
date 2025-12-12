@@ -62,7 +62,7 @@ export async function PATCH(request, { params }) {
     const client = await pool.connect();
     try {
         const body = await request.json();
-        const { user_id, action } = body; // action: 'set_principal'
+        const { user_id, action } = body; // action: 'set_principal' or 'update'
 
         await client.query('BEGIN');
 
@@ -82,6 +82,34 @@ export async function PATCH(request, { params }) {
             if (result.rowCount === 0) {
                 await client.query('ROLLBACK');
                 return new Response(JSON.stringify({ error: 'Dirección no encontrada' }), { status: 404 });
+            }
+        } else if (action === 'update') {
+            // Extract address fields
+            const { calle, ciudad, estado, pais, alias } = body;
+
+            // Verify ownership
+            const ownership = await client.query(
+                'SELECT * FROM cliente_direcciones WHERE cliente_id = $1 AND direccion_id = $2',
+                [clienteId, id]
+            );
+
+            if (ownership.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return new Response(JSON.stringify({ error: 'Dirección no encontrada o no autorizada' }), { status: 404 });
+            }
+
+            // Update direcciones table (calle, ciudad, estado, pais)
+            await client.query(
+                'UPDATE direcciones SET calle = $1, ciudad = $2, estado = $3, pais = $4, updated_at = NOW() WHERE id = $5',
+                [calle, ciudad, estado, pais || 'Bolivia', id]
+            );
+
+            // Update cliente_direcciones table (alias)
+            if (alias !== undefined) {
+                await client.query(
+                    'UPDATE cliente_direcciones SET alias = $1, updated_at = NOW() WHERE cliente_id = $2 AND direccion_id = $3',
+                    [alias, clienteId, id]
+                );
             }
         }
 

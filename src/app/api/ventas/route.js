@@ -57,29 +57,12 @@ export async function POST(request) {
       clienteId = newClient.rows[0].id;
     }
 
-    // 2. Process Items (Find best location for each)
+    // 2. Process Items - el trigger selecciona ubicación automáticamente
     let subtotal = 0;
     const detalles = [];
 
     for (const item of productos) {
       const cantidad = Number(item.cantidad);
-
-      // Auto-assign location: Highest stock
-      const stockRes = await client.query(`
-        SELECT ubicacion_id, cantidad_disponible
-        FROM inventario
-        WHERE producto_id = $1 AND cantidad_disponible >= $2
-        ORDER BY cantidad_disponible DESC
-        LIMIT 1
-      `, [item.id, cantidad]);
-
-      if (stockRes.rows.length === 0) {
-        throw new Error(`Stock insuficiente para el producto ID ${item.id} (No hay ninguna tienda con ${cantidad} unidades)`);
-      }
-
-      const bestLocation = stockRes.rows[0];
-      const sourceLocationId = bestLocation.ubicacion_id;
-      const currentStock = Number(bestLocation.cantidad_disponible);
 
       // Get price
       const prodRes = await client.query('SELECT precio FROM productos WHERE id = $1', [item.id]);
@@ -91,18 +74,9 @@ export async function POST(request) {
         producto_id: item.id,
         cantidad: cantidad,
         precio_unitario: precio,
-        subtotal: itemSubtotal,
-        ubicacion_id: sourceLocationId // Store specific source location
+        subtotal: itemSubtotal
+        // ubicacion_id: NULL (trigger lo asignará automáticamente)
       });
-
-      // Update Stock
-      await client.query(`
-        UPDATE inventario 
-        SET cantidad_disponible = cantidad_disponible - $1
-        WHERE producto_id = $2 AND ubicacion_id = $3
-      `, [cantidad, item.id, sourceLocationId]);
-
-
     }
 
     const impuestos = subtotal * 0.0;
@@ -144,18 +118,17 @@ export async function POST(request) {
 
     const ventaId = nuevaVenta.rows[0].id;
 
-    // Insert Details (With Ubicacion ID)
+    // Insert Details (trigger asigna ubicacion_id automáticamente)
     for (const detalle of detalles) {
       await client.query(`
         INSERT INTO detalles_venta (
           venta_id, 
-          producto_id, 
-          ubicacion_id,
+          producto_id,
           cantidad, 
           precio_unitario
         )
-        VALUES ($1, $2, $3, $4, $5)
-      `, [ventaId, detalle.producto_id, detalle.ubicacion_id, detalle.cantidad, detalle.precio_unitario]);
+        VALUES ($1, $2, $3, $4)
+      `, [ventaId, detalle.producto_id, detalle.cantidad, detalle.precio_unitario]);
     }
 
     await client.query('COMMIT');

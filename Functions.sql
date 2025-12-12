@@ -53,8 +53,91 @@ END;
 $$ LANGUAGE plpgsql;
 
 
+-----------------------------------------------------------------
+-- FUNCIONES DE PRODUCTOS
+-----------------------------------------------------------------
 
+-- Crear un nuevo producto
+CREATE OR REPLACE FUNCTION crear_producto(
+    p_nombre VARCHAR(200),
+    p_descripcion TEXT,
+    p_precio NUMERIC(10,2),
+    p_precio_costo NUMERIC(10,2),
+    p_categoria_id INTEGER,
+    p_marca_id INTEGER,
+    p_sku VARCHAR(50),
+    p_imagen_url TEXT,
+    p_cantidad_minima INTEGER,
+    p_dias_garantia INTEGER,
+    p_activo BOOLEAN DEFAULT TRUE
+) RETURNS INTEGER AS $$
+DECLARE
+    v_producto_id INTEGER;
+BEGIN
+    INSERT INTO productos (
+        nombre, 
+        descripcion, 
+        precio, 
+        precio_costo, 
+        categoria_id, 
+        marca_id, 
+        sku, 
+        imagen_url, 
+        cantidad_minima, 
+        dias_garantia, 
+        activo
+    )
+    VALUES (
+        p_nombre, 
+        p_descripcion, 
+        p_precio, 
+        p_precio_costo, 
+        p_categoria_id, 
+        p_marca_id, 
+        p_sku, 
+        p_imagen_url, 
+        COALESCE(p_cantidad_minima, 5),
+        COALESCE(p_dias_garantia, 365),
+        p_activo
+    )
+    RETURNING id INTO v_producto_id;
+    
+    RETURN v_producto_id;
+END;
+$$ LANGUAGE plpgsql;
 
+-- Actualizar un producto existente
+CREATE OR REPLACE FUNCTION actualizar_producto(
+    p_id INTEGER,
+    p_nombre VARCHAR(200),
+    p_descripcion TEXT,
+    p_precio NUMERIC(10,2),
+    p_precio_costo NUMERIC(10,2),
+    p_categoria_id INTEGER,
+    p_marca_id INTEGER,
+    p_sku VARCHAR(50),
+    p_imagen_url TEXT,
+    p_cantidad_minima INTEGER,
+    p_dias_garantia INTEGER,
+    p_activo BOOLEAN
+) RETURNS VOID AS $$
+BEGIN
+    UPDATE productos
+    SET 
+        nombre = p_nombre,
+        descripcion = p_descripcion,
+        precio = p_precio,
+        precio_costo = p_precio_costo,
+        categoria_id = p_categoria_id,
+        marca_id = p_marca_id,
+        sku = p_sku,
+        imagen_url = p_imagen_url,
+        cantidad_minima = p_cantidad_minima,
+        dias_garantia = p_dias_garantia,
+        activo = p_activo
+    WHERE id = p_id;
+END;
+$$ LANGUAGE plpgsql;
 
 
 
@@ -191,32 +274,39 @@ EXECUTE FUNCTION crear_envio_automatico();
 -----------------------------------------------------------------
 
 
--- A. Trigger para VENTAS (Resta Stock - selecciona ubicación con más stock automáticamente)
+-- A. Trigger para VENTAS (Selecciona ubicación automática si no se especifica)
 CREATE OR REPLACE FUNCTION restar_stock_venta()
 RETURNS TRIGGER AS $$
 DECLARE
     v_ubicacion_id INTEGER;
-    v_stock_disponible INTEGER;
 BEGIN
-    -- Seleccionar ubicación con MÁS stock disponible de este producto
-    SELECT ubicacion_id, cantidad_disponible INTO v_ubicacion_id, v_stock_disponible
-    FROM inventario
-    WHERE producto_id = NEW.producto_id
-      AND cantidad_disponible >= NEW.cantidad
-    ORDER BY cantidad_disponible DESC
-    LIMIT 1;
-    
-    -- Si no hay stock suficiente en ninguna ubicación, error
-    IF v_ubicacion_id IS NULL THEN
-        RAISE EXCEPTION 'Stock insuficiente para producto ID % (se requieren % unidades)', NEW.producto_id, NEW.cantidad;
+    -- Si no se especificó ubicación, seleccionar automáticamente la con más stock
+    IF NEW.ubicacion_id IS NULL THEN
+        SELECT ubicacion_id INTO v_ubicacion_id
+        FROM inventario
+        WHERE producto_id = NEW.producto_id
+          AND cantidad_disponible >= NEW.cantidad
+        ORDER BY cantidad_disponible DESC
+        LIMIT 1;
+        
+        IF v_ubicacion_id IS NULL THEN
+            RAISE EXCEPTION 'Stock insuficiente para producto ID % (se requieren % unidades)', NEW.producto_id, NEW.cantidad;
+        END IF;
+        
+        -- Actualizar el registro con la ubicación seleccionada
+        NEW.ubicacion_id = v_ubicacion_id;
     END IF;
     
-    -- Descontar de esa ubicación
+    -- Descontar de la ubicación (ya sea especificada o auto-seleccionada)
     UPDATE inventario 
     SET cantidad_disponible = cantidad_disponible - NEW.cantidad,
         ultima_actualizacion = NOW()
     WHERE producto_id = NEW.producto_id 
-      AND ubicacion_id = v_ubicacion_id;
+      AND ubicacion_id = NEW.ubicacion_id;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'No se pudo descontar stock para producto ID % en ubicación ID %', NEW.producto_id, NEW.ubicacion_id;
+    END IF;
     
     RETURN NEW;
 END;
@@ -224,7 +314,7 @@ $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_movimiento_venta ON detalles_venta;
 CREATE TRIGGER trg_movimiento_venta
-AFTER INSERT ON detalles_venta
+BEFORE INSERT ON detalles_venta
 FOR EACH ROW
 EXECUTE FUNCTION restar_stock_venta();
 

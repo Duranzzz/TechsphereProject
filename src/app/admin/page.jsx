@@ -31,7 +31,8 @@ import {
   Menu,
   Truck,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  User
 } from "lucide-react";
 import {
   LineChart,
@@ -198,8 +199,19 @@ function AdminDashboard() {
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3 bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-inner">
-                  {user?.name?.[0] || "A"}
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {user?.foto_url ? (
+                    <img
+                      src={user.foto_url}
+                      alt={user.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <User className="h-4 w-4 text-white" />
+                  )}
                 </div>
                 <span className="font-medium text-blue-100">
                   {user?.name || "Admin"}
