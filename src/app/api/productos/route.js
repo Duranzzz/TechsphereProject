@@ -1,5 +1,10 @@
+// API Productos - GET/POST/PUT/DELETE /api/productos
+// CRUD completo con queries complejas y funciones SQL
+
 import { query } from "@/lib/db";
 
+// GET - Listar productos con filtros opcionales
+// Params: ?categoria=1&marca=2&search=iphone&ubicacion_id=1
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -9,6 +14,7 @@ export async function GET(request) {
     const ubicacion_id = searchParams.get("ubicacion_id");
     const params = [];
 
+    // Query con 4 LEFT JOINs + agregaciones (SUM, AVG, COUNT)
     let sql = `
       SELECT p.*, c.nombre as categoria_nombre, m.nombre as marca_nombre,
              COALESCE(SUM(i.cantidad_disponible), 0) as stock,
@@ -24,12 +30,14 @@ export async function GET(request) {
       WHERE p.activo = true
     `;
 
+    // Agregar ubicacion_id si existe
     if (ubicacion_id) {
       params.push(ubicacion_id);
     }
 
     let paramCount = params.length;
 
+    // Filtros dinámicos (solo agregan si existen)
     if (categoria) {
       paramCount++;
       sql += ` AND p.categoria_id = $${paramCount}`;
@@ -45,9 +53,10 @@ export async function GET(request) {
     if (search) {
       paramCount++;
       sql += ` AND (LOWER(p.nombre) LIKE LOWER($${paramCount}) OR LOWER(p.descripcion) LIKE LOWER($${paramCount}))`;
-      params.push(`%${search}%`);
+      params.push(`%${search}%`);  // Búsqueda parcial
     }
 
+    // GROUP BY requerido por agregaciones, ORDER BY prioriza con stock
     sql += ` GROUP BY p.id, c.nombre, m.nombre ORDER BY (COALESCE(SUM(i.cantidad_disponible), 0) > 0) DESC, p.nombre ASC`;
 
     const result = await query(sql, params);
@@ -61,6 +70,7 @@ export async function GET(request) {
   }
 }
 
+// POST - Crear producto usando función SQL
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -82,7 +92,7 @@ export async function POST(request) {
       return Response.json({ error: "Nombre y precio son requeridos" }, { status: 400 });
     }
 
-    // Llamar a función SQL crear_producto()
+    // Llama a función almacenada crear_producto() (ver docs/03-SCRIPTS-SQL.md)
     const result = await query(`
       SELECT crear_producto($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) as id
     `, [
@@ -112,6 +122,7 @@ export async function POST(request) {
   }
 }
 
+// PUT - Actualizar producto usando función SQL
 export async function PUT(request) {
   try {
     const body = await request.json();
@@ -130,7 +141,7 @@ export async function PUT(request) {
       activo
     } = body;
 
-    // Llamar a función SQL actualizar_producto()
+    // Llama a función almacenada actualizar_producto()
     await query(`
       SELECT actualizar_producto($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     `, [
@@ -158,6 +169,7 @@ export async function PUT(request) {
   }
 }
 
+// DELETE - Soft delete (marca activo = false)
 export async function DELETE(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -167,7 +179,7 @@ export async function DELETE(request) {
       return Response.json({ error: "ID required" }, { status: 400 });
     }
 
-    // Soft delete
+    // No borra físicamente, solo desactiva
     const result = await query(`
       UPDATE productos
       SET activo = false

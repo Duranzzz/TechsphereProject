@@ -1,3 +1,6 @@
+// API Login - POST /api/auth/login
+// Autentica usuarios con Argon2
+
 import { query } from '@/lib/db';
 import argon2 from 'argon2';
 
@@ -16,6 +19,7 @@ export async function POST(request) {
             });
         }
 
+        // Buscar usuario con LEFT JOINs para obtener datos de cliente/empleado
         const result = await query(
             `SELECT 
                 u.id, 
@@ -33,10 +37,11 @@ export async function POST(request) {
              FROM users u
              LEFT JOIN clientes c ON u.id = c.user_id
              LEFT JOIN empleados e ON u.id = e.user_id
-             WHERE u.email = $1`,
+             WHERE u.email = $1`,  // Usa idx_users_email
             [email]
         );
 
+        // Validar existencia
         if (result.rows.length === 0) {
             return new Response(JSON.stringify({ error: 'Credenciales inválidas' }), {
                 status: 401,
@@ -45,6 +50,8 @@ export async function POST(request) {
         }
 
         const user = result.rows[0];
+
+        // Verificar password con Argon2
         const validPassword = await argon2.verify(user.password, password);
 
         if (!validPassword) {
@@ -54,14 +61,8 @@ export async function POST(request) {
             });
         }
 
-        // Check if account is active for clients and employees
+        // Validar cuenta activa
         if (user.rol === 'cliente') {
-            // Note: If no client record exists despite role 'cliente', we strictly valid against user record? 
-            // The LEFT JOIN returns null for cliente_activo if no record.
-            // Assuming if they are role 'cliente', they SHOULD have a record, but if not, we default to active unless explicitly false?
-            // Actually, if client record is missing, cliente_activo is null. We should handle that.
-            // But based on inserts `active` defaults to true.
-
             if (user.cliente_activo === false) {
                 return new Response(JSON.stringify({ error: 'Cuenta desactivada. Contacte a TechSphere.' }), {
                     status: 403,
@@ -77,12 +78,10 @@ export async function POST(request) {
             }
         }
 
-        // Clean up internal helper fields before returning
+        // Limpiar campos internos antes de retornar
         delete user.cliente_activo;
         delete user.empleado_activo;
-
-        // Remove password from response
-        delete user.password;
+        delete user.password;  // ¡Nunca retornar password!
 
         return new Response(JSON.stringify({ user }), {
             status: 200,

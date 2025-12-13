@@ -1,11 +1,30 @@
+/**
+ * root.tsx - LAYOUT GLOBAL DE LA APLICACIÓN
+ * ==========================================
+ * 
+ * Este archivo es el "esqueleto" de TODA la aplicación.
+ * Se renderiza UNA SOLA VEZ y envuelve a todas las páginas.
+ * 
+ * CONCEPTOS CLAVE:
+ * • Layout: Define <html>, <head>, <body> - estructura base
+ * • Outlet: "Agujero" donde se inyectan las páginas (page.jsx)
+ * • Providers: Contextos globales (Auth, Cart) que comparten estado
+ * 
+ * FLUJO:
+ * 1. Usuario visita /productos
+ * 2. React Router renderiza <Layout> (esto)
+ * 3. Dentro de <Outlet />, inyecta productos/page.jsx
+ * 4. Los providers rodean todo para compartir estado global
+ */
+
 import {
-  Links,
-  Meta,
-  Outlet,
-  Scripts,
-  ScrollRestoration,
+  Links,        // Inyecta <link> tags (CSS, preload)
+  Meta,         // Inyecta <meta> tags (SEO, viewport)
+  Outlet,       // 🔥 CLAVE: Aquí se renderizan las páginas hijas
+  Scripts,      // Inyecta <script> tags (JavaScript de React)
+  ScrollRestoration,  // Restaura posición de scroll al navegar
   useAsyncError,
-  useLocation,
+  useLocation,  // Hook para obtener URL actual
   useRouteError,
 } from 'react-router';
 
@@ -19,16 +38,22 @@ import {
   type FC,
   Component,
 } from 'react';
+
+// CSS global (Tailwind CSS)
 import './global.css';
 
+// Fetch customizado (polyfill o extensión)
 import fetch from '@/__create/fetch';
+
+// PROVIDERS GLOBALES (Context API)
 // @ts-ignore
-import { AuthProvider } from '@/hooks/useAuth';
-import { CartProvider } from '@/context/CartContext';
+import { AuthProvider } from '@/hooks/useAuth';      // 🔐 Autenticación global
+import { CartProvider } from '@/context/CartContext'; // 🛒 Carrito de compras global
+
 import { useNavigate } from 'react-router';
 // @ts-ignore
 import { serializeError } from 'serialize-error';
-import { Toaster } from 'sonner';
+import { Toaster } from 'sonner';  // 🔔 Notificaciones tipo toast
 // @ts-ignore
 import { LoadFonts } from 'virtual:load-fonts.jsx';
 import { HotReloadIndicator } from '../__create/HotReload';
@@ -38,10 +63,16 @@ import { useDevServerHeartbeat } from '../__create/useDevServerHeartbeat';
 
 export const links = () => [];
 
+// POLYFILL: Reemplaza fetch nativo con versión customizada (si existe)
 if (globalThis.window && globalThis.window !== undefined) {
   globalThis.window.fetch = fetch;
 }
 
+/**
+ * ERROR BOUNDARY UI
+ * Componente visual que aparece cuando hay un error en la app
+ * (No confundir con la lógica de captura de errores)
+ */
 function SharedErrorBoundary({
   isOpen,
   children,
@@ -78,9 +109,9 @@ function SharedErrorBoundary({
 }
 
 /**
- * NOTE: we have a shared error boundary for the app, but then we also expose
- * this in case something goes wrong outside of the normal user's app flow.
- * React-router will mount this one
+ * ERROR BOUNDARY EXPORTADO
+ * React Router llama esto automáticamente cuando hay un error
+ * (Equivalente a try-catch pero para componentes React)
  */
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   return <SharedErrorBoundary isOpen={true} />;
@@ -92,10 +123,13 @@ function InternalErrorBoundary({ error: errorArg }: Route.ErrorBoundaryProps) {
   const error = errorArg ?? asyncError ?? routeError;
   const [isOpen, setIsOpen] = useState(false);
 
+  // Animar entrada del error
   useEffect(() => {
     const animateTimer = setTimeout(() => setIsOpen(true), 100);
     return () => clearTimeout(animateTimer);
   }, []);
+
+  // Botón: Mostrar logs (solo en iframe - desarrollo)
   const { buttonProps: showLogsButtonProps } = useButton(
     {
       onPress: useCallback(() => {
@@ -109,6 +143,8 @@ function InternalErrorBoundary({ error: errorArg }: Route.ErrorBoundaryProps) {
     },
     useRef<HTMLButtonElement>(null)
   );
+
+  // Botón: Intentar arreglar con IA (desarrollo)
   const { buttonProps: fixButtonProps } = useButton(
     {
       onPress: useCallback(() => {
@@ -125,6 +161,8 @@ function InternalErrorBoundary({ error: errorArg }: Route.ErrorBoundaryProps) {
     },
     useRef<HTMLButtonElement>(null)
   );
+
+  // Botón: Copiar error
   const { buttonProps: copyButtonProps } = useButton(
     {
       onPress: useCallback(() => {
@@ -141,6 +179,7 @@ function InternalErrorBoundary({ error: errorArg }: Route.ErrorBoundaryProps) {
       return true;
     }
   }
+
   return (
     <SharedErrorBoundary isOpen={isOpen}>
       {isInIframe() ? (
@@ -182,9 +221,15 @@ type ErrorBoundaryProps = {
 
 type ErrorBoundaryState = { hasError: boolean; error: unknown | null };
 
+/**
+ * ERROR BOUNDARY CLASS
+ * Captura errores de JavaScript que ocurren en componentes hijos
+ * Similar a try-catch pero para React components
+ */
 class ErrorBoundaryWrapper extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { hasError: false, error: null };
 
+  // Se llama cuando un componente hijo lanza un error
   static getDerivedStateFromError(error: unknown): ErrorBoundaryState {
     return { hasError: true, error };
   }
@@ -209,6 +254,16 @@ type ClientOnlyProps = {
   loader: () => React.ReactNode;
 };
 
+/**
+ * CLIENT ONLY COMPONENT
+ * Solo renderiza en el navegador (NO en servidor)
+ * Útil para componentes que usan window, localStorage, etc.
+ * 
+ * PATRÓN: SSR (Server-Side Rendering)
+ * 1. Primera carga: Renderiza en servidor (HTML estático)
+ * 2. Hydration: React "cobra vida" en cliente
+ * 3. ClientOnly se salta paso 1 y solo hace paso 2
+ */
 export const ClientOnly: React.FC<ClientOnlyProps> = ({ loader }) => {
   const [isMounted, setIsMounted] = useState(false);
 
@@ -226,29 +281,25 @@ export const ClientOnly: React.FC<ClientOnlyProps> = ({ loader }) => {
 };
 
 /**
- * useHmrConnection()
- * ------------------
- * • `true`  → HMR socket is healthy
- * • `false` → socket lost (Vite is polling / may auto‑reload soon)
- *
- * Works only in dev; in prod it always returns `true`.
+ * HMR CONNECTION MONITOR
+ * Detecta si la conexión WebSocket con Vite está activa
+ * (Hot Module Replacement = cambios sin recargar página)
+ * 
+ * @returns true si conectado, false si desconectado
  */
 export function useHmrConnection(): boolean {
   const [connected, setConnected] = useState(() => !!import.meta.hot);
 
   useEffect(() => {
-    // No HMR object outside dev builds
+    // Solo funciona en desarrollo
     if (!import.meta.hot) return;
 
-    /** Fired the moment the WS closes unexpectedly */
     const onDisconnect = () => setConnected(false);
-    /** Fired every time the WS (re‑)opens */
     const onConnect = () => setConnected(true);
 
     import.meta.hot.on('vite:ws:disconnect', onDisconnect);
     import.meta.hot.on('vite:ws:connect', onConnect);
 
-    // Optional: catch the “about to full‑reload” event as a last resort
     const onFullReload = () => setConnected(false);
     import.meta.hot.on('vite:beforeFullReload', onFullReload);
 
@@ -262,6 +313,8 @@ export function useHmrConnection(): boolean {
   return connected;
 }
 
+// COMUNICACIÓN CON IFRAME PADRE (desarrollo)
+// Si la app corre dentro de un iframe, se comunica con el padre
 const healthyResponseType = 'sandbox:web:healthcheck:response';
 const useHandshakeParent = () => {
   const isHmrConnected = useHmrConnection();
@@ -276,8 +329,6 @@ const useHandshakeParent = () => {
       }
     };
     window.addEventListener('message', handleMessage);
-    // Immediately respond to the parent window with a healthy response in
-    // case we missed the healthcheck message
     window.parent.postMessage(healthyResponse, '*');
     return () => {
       window.removeEventListener('message', handleMessage);
@@ -285,6 +336,7 @@ const useHandshakeParent = () => {
   }, [isHmrConnected]);
 };
 
+// CODEGEN: Generación de código con IA (desarrollo)
 const useCodeGen = () => {
   const { startCodeGen, setCodeGenGenerating, completeCodeGen, errorCodeGen, stopCodeGen } =
     useSandboxStore();
@@ -318,6 +370,7 @@ const useCodeGen = () => {
   }, [startCodeGen, setCodeGenGenerating, completeCodeGen, errorCodeGen, stopCodeGen]);
 };
 
+// REFRESH: Recargar página desde padre
 const useRefresh = () => {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -335,6 +388,28 @@ const useRefresh = () => {
   }, []);
 };
 
+/**
+ * LAYOUT - COMPONENTE PRINCIPAL
+ * ==============================
+ * Este es el "esqueleto" HTML de toda la app.
+ * Se renderiza UNA SOLA VEZ y nunca cambia.
+ * 
+ * ESTRUCTURA:
+ * <html>
+ *   <head>
+ *     <Meta />    - SEO tags
+ *     <Links />   - CSS imports
+ *   </head>
+ *   <body>
+ *     <AuthProvider>      - 🔐 Estado de autenticación global
+ *       <CartProvider>    - 🛒 Estado del carrito global
+ *         {children}      - 🔥 Aquí va el contenido de cada página
+ *       </CartProvider>
+ *     </AuthProvider>
+ *     <Scripts />         - JavaScript de React
+ *   </body>
+ * </html>
+ */
 export function Layout({ children }: { children: ReactNode }) {
   useHandshakeParent();
   useCodeGen();
@@ -343,6 +418,8 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location?.pathname;
+
+  // Sincronizar navegación con iframe padre
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'sandbox:navigation') {
@@ -356,6 +433,7 @@ export function Layout({ children }: { children: ReactNode }) {
     };
   }, [navigate]);
 
+  // Notificar cambios de ruta al padre
   useEffect(() => {
     if (pathname) {
       window.parent.postMessage(
@@ -367,35 +445,52 @@ export function Layout({ children }: { children: ReactNode }) {
       );
     }
   }, [pathname]);
+
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
+        <Meta />    {/* SEO tags dinámicos */}
+        <Links />   {/* CSS imports */}
         <script type="module" src="/src/__create/dev-error-overlay.js"></script>
         <link rel="icon" href="/src/__create/favicon.png" />
-        <LoadFonts />
+        <LoadFonts /> {/* Cargar fuentes personalizadas */}
       </head>
       <body>
+        {/* 
+          ClientOnly: Solo renderiza en navegador (no en servidor)
+          Necesario porque AuthProvider y Cart usan localStorage/window 
+        */}
         <ClientOnly loader={() => (
-          <AuthProvider>
-            <CartProvider>
-              {children}
+          <AuthProvider>     {/* 🔐 Compartir usuario logueado en TODA la app */}
+            <CartProvider>   {/* 🛒 Compartir carrito en TODA la app */}
+              {children}     {/* 🔥 AQUÍ SE INYECTAN LAS PÁGINAS (<Outlet />) */}
             </CartProvider>
           </AuthProvider>
         )} />
-        <HotReloadIndicator />
-        <Toaster position="bottom-right" richColors />
-        <ScrollRestoration />
-        <Scripts />
+        <HotReloadIndicator />      {/* Indicador de HMR */}
+        <Toaster position="bottom-right" richColors />  {/* Notificaciones toast */}
+        <ScrollRestoration />        {/* Guardar posición de scroll */}
+        <Scripts />                  {/* JavaScript de React */}
         <script src="https://kit.fontawesome.com/2c15cc0cc7.js" crossOrigin="anonymous" async />
       </body>
     </html>
   );
 }
 
+/**
+ * APP - COMPONENTE RAÍZ
+ * =====================
+ * Es el componente más simple pero MÁS IMPORTANTE.
+ * <Outlet /> es el "agujero" donde React Router inyecta las páginas.
+ * 
+ * EJEMPLO:
+ * Usuario visita /productos
+ * → React Router busca src/app/productos/page.jsx
+ * → Lo renderiza DENTRO de este <Outlet />
+ * → Resultado: Layout global + página específica
+ */
 export default function App() {
-  return <Outlet />;
+  return <Outlet />;  // 🔥 AQUÍ SE RENDERIZAN TODAS LAS PÁGINAS
 }

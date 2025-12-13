@@ -7,20 +7,33 @@ import {
 	route,
 } from '@react-router/dev/routes';
 
+// __dirname es la ubicación de ESTE archivo (src/app/)
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
+// TIPO: Cada nodo representa una carpeta o archivo
 type Tree = {
-	path: string;
-	children: Tree[];
-	hasPage: boolean;
-	hasRoute: boolean;
-	isParam: boolean;
-	paramName: string;
-	isCatchAll: boolean;
+	path: string;           // Ruta completa: "productos" o "producto/[id]"
+	children: Tree[];       // Subcarpetas (árbol recursivo)
+	hasPage: boolean;       // ¿Tiene page.jsx? → Es una página visible
+	hasRoute: boolean;      // ¿Tiene route.js? → Es un endpoint API
+	isParam: boolean;       // ¿Es parámetro? [id] → true
+	paramName: string;      // Nombre del parámetro: "id"
+	isCatchAll: boolean;    // ¿Es catch-all? [...slugs] → true
 };
 
+/**
+ * FUNCIÓN PRINCIPAL: Escanea recursivamente src/app/
+ * Lee el sistema de archivos y construye un árbol de rutas
+ * 
+ * @param dir - Directorio a escanear (ej: "src/app/productos")
+ * @param basePath - Ruta acumulada (ej: "productos")
+ * @returns Árbol con toda la estructura de carpetas/archivos
+ */
 function buildRouteTree(dir: string, basePath = ''): Tree {
+	// Leer todos los archivos/carpetas de este directorio
 	const files = readdirSync(dir);
+
+	// Crear nodo para esta carpeta
 	const node: Tree = {
 		path: basePath,
 		children: [],
@@ -31,32 +44,36 @@ function buildRouteTree(dir: string, basePath = ''): Tree {
 		paramName: '',
 	};
 
-	// Check if the current directory name indicates a parameter
+	// Detectar si la carpeta es un parámetro: [id], [slug], etc.
 	const dirName = basePath.split('/').pop();
 	if (dirName?.startsWith('[') && dirName.endsWith(']')) {
 		node.isParam = true;
-		const paramName = dirName.slice(1, -1);
+		const paramName = dirName.slice(1, -1); // Quitar corchetes: [id] → id
 
-		// Check if it's a catch-all parameter (e.g., [...ids])
+		// Catch-all: [...ids] → Captura múltiples segmentos
 		if (paramName.startsWith('...')) {
 			node.isCatchAll = true;
-			node.paramName = paramName.slice(3); // Remove the '...' prefix
+			node.paramName = paramName.slice(3); // [...ids] → ids
 		} else {
 			node.paramName = paramName;
 		}
 	}
 
+	// Escanear todos los archivos en esta carpeta
 	for (const file of files) {
 		const filePath = join(dir, file);
 		const stat = statSync(filePath);
 
 		if (stat.isDirectory()) {
+			// Es una subcarpeta → Recursión
 			const childPath = basePath ? `${basePath}/${file}` : file;
 			const childNode = buildRouteTree(filePath, childPath);
 			node.children.push(childNode);
 		} else if (file === 'page.jsx') {
+			// Encontró página visual → Marcar
 			node.hasPage = true;
 		} else if (file === 'route.js' || file === 'route.ts') {
+			// Encontró endpoint API → Marcar
 			node.hasRoute = true;
 		}
 	}
@@ -64,34 +81,46 @@ function buildRouteTree(dir: string, basePath = ''): Tree {
 	return node;
 }
 
+/**
+ * CONVERSOR: Árbol de archivos → Rutas de React Router
+ * Transforma la estructura de carpetas en configuración de rutas
+ * 
+ * EJEMPLOS:
+ * • productos/page.jsx → route("/productos", "./productos/page.jsx")
+ * • producto/[id]/page.jsx → route("/producto/:id", "./producto/[id]/page.jsx")
+ * • api/ventas/route.js → route("/api/ventas", "./api/ventas/route.js")
+ */
 function generateRoutes(node: Tree): RouteConfigEntry[] {
 	const routes: RouteConfigEntry[] = [];
 
+	// CASO 1: Tiene page.jsx → Crear ruta de PÁGINA
 	if (node.hasPage) {
 		const componentPath =
 			node.path === '' ? `./${node.path}page.jsx` : `./${node.path}/page.jsx`;
 
 		if (node.path === '') {
+			// Raíz (/) → Usar index()
 			routes.push(index(componentPath));
 		} else {
-			// Handle parameter routes
+			// TRANSFORMAR PARÁMETROS:
+			// [id] → :id (React Router syntax)
+			// [...ids] → * (catch-all)
 			let routePath = node.path;
 
-			// Replace all parameter segments in the path
 			const segments = routePath.split('/');
 			const processedSegments = segments.map((segment) => {
 				if (segment.startsWith('[') && segment.endsWith(']')) {
 					const paramName = segment.slice(1, -1);
 
-					// Handle catch-all parameters (e.g., [...ids] becomes *)
+					// Catch-all: [...ids] → *
 					if (paramName.startsWith('...')) {
-						return '*'; // React Router's catch-all syntax
+						return '*';
 					}
-					// Handle optional parameters (e.g., [[id]] becomes :id?)
+					// Opcional: [[id]] → :id?
 					if (paramName.startsWith('[') && paramName.endsWith(']')) {
 						return `:${paramName.slice(1, -1)}?`;
 					}
-					// Handle regular parameters (e.g., [id] becomes :id)
+					// Normal: [id] → :id
 					return `:${paramName}`;
 				}
 				return segment;
@@ -102,13 +131,14 @@ function generateRoutes(node: Tree): RouteConfigEntry[] {
 		}
 	}
 
-	// Handle API routes
+	// CASO 2: Tiene route.js → Crear ruta de API
 	if (node.hasRoute) {
-		const routeFile = readdirSync(node.path ? join(__dirname, node.path) : __dirname).find(f => f === 'route.js' || f === 'route.ts');
+		const routeFile = readdirSync(node.path ? join(__dirname, node.path) : __dirname)
+			.find(f => f === 'route.js' || f === 'route.ts');
 		const componentPath = node.path === '' ? `./${routeFile}` : `./${node.path}/${routeFile}`;
 
+		// Misma transformación de parámetros
 		let routePath = node.path;
-		// Replace all parameter segments in the path (same logic as pages)
 		const segments = routePath.split('/');
 		const processedSegments = segments.map((segment) => {
 			if (segment.startsWith('[') && segment.endsWith(']')) {
@@ -128,12 +158,16 @@ function generateRoutes(node: Tree): RouteConfigEntry[] {
 		routes.push(route(routePath, componentPath));
 	}
 
+	// RECURSIÓN: Procesar todas las subcarpetas
 	for (const child of node.children) {
 		routes.push(...generateRoutes(child));
 	}
 
 	return routes;
 }
+
+// HMR (Hot Module Replacement) en desarrollo
+// Detecta cambios en page.jsx y recarga automáticamente
 if (import.meta.env.DEV) {
 	import.meta.glob('./**/page.jsx', {});
 	if (import.meta.hot) {
@@ -142,8 +176,10 @@ if (import.meta.env.DEV) {
 		});
 	}
 }
+
+// EJECUTAR: Generar rutas automáticamente
 const tree = buildRouteTree(__dirname);
-const notFound = route('*?', './__create/not-found.tsx');
+const notFound = route('*?', './__create/not-found.tsx'); // 404
 const routes = [...generateRoutes(tree), notFound];
 
 export default routes;

@@ -1,11 +1,15 @@
+// API Ventas - POST /api/ventas
+// Proceso de venta transaccional con triggers automáticos (stock, garantía, envío, kardex)
+
 import { pool } from "@/lib/db";
 
 export async function POST(request) {
-  const client = await pool.connect();
+  const client = await pool.connect(); // Obtener conexión del pool
   try {
     const body = await request.json();
     const { cliente, productos, empleado_id, metodo_pago, direccion_id } = body;
 
+    // Validar datos requeridos
     if (!cliente || !productos || productos.length === 0 || !direccion_id) {
       return Response.json(
         { error: "Faltan datos requeridos (Cliente, Productos o Dirección)" },
@@ -13,14 +17,15 @@ export async function POST(request) {
       );
     }
 
-    await client.query('BEGIN');
+    await client.query('BEGIN'); // Iniciar transacción
 
-    // 1. Handle Client
+    // 1. Manejar cliente - buscar existente o crear nuevo
     let clienteId = null;
 
     if (cliente.id) {
       clienteId = cliente.id;
     } else if (cliente.email) {
+      // Buscar por email
       const existingClient = await client.query(`
          SELECT c.id 
          FROM clientes c 
@@ -30,13 +35,14 @@ export async function POST(request) {
       if (existingClient.rows.length > 0) clienteId = existingClient.rows[0].id;
     }
 
+    // Crear cliente nuevo si no existe
     if (!clienteId) {
       const email = cliente.email || `cliente_${Date.now()}@system.local`;
       const userRes = await client.query(`
          INSERT INTO users (nombre, email, password, rol)
          VALUES ($1, $2, $3, 'cliente')
          RETURNING id
-       `, [cliente.nombre, email, '$argon2id$v=19$m=65536,t=3,p=4$dummyhash$dummyhash']);
+       `, [cliente.nombre, email, '$argon2id$v=19$m=65536,t=3,p=4$dummyhash$dummyhash']); // Password dummy para clientes del sistema
       const userId = userRes.rows[0].id;
 
       let direccionId = null;
@@ -57,14 +63,12 @@ export async function POST(request) {
       clienteId = newClient.rows[0].id;
     }
 
-    // 2. Process Items - el trigger selecciona ubicación automáticamente
+    // 2. Procesar productos - calcular subtotal
     let subtotal = 0;
     const detalles = [];
 
     for (const item of productos) {
       const cantidad = Number(item.cantidad);
-
-      // Get price
       const prodRes = await client.query('SELECT precio FROM productos WHERE id = $1', [item.id]);
       const precio = Number(prodRes.rows[0].precio);
       const itemSubtotal = precio * cantidad;
@@ -75,94 +79,87 @@ export async function POST(request) {
         cantidad: cantidad,
         precio_unitario: precio,
         subtotal: itemSubtotal
-        // ubicacion_id: NULL (trigger lo asignará automáticamente)
+        // ubicacion_id: NULL (el trigger lo asignará automáticamente)
       });
     }
 
-    const impuestos = subtotal * 0.0;
-    const total = subtotal + impuestos;
-
-    // Get Payment Method ID
-    let metodoPagoId = null;
+    // 3. Buscar método de pago por nombre
+    let metodo_pago_id = null;
     if (metodo_pago) {
-      if (typeof metodo_pago === 'string' && isNaN(metodo_pago)) {
-        const mpRes = await client.query('SELECT id FROM metodos_pago WHERE nombre ILIKE $1', [metodo_pago]);
-        if (mpRes.rows.length > 0) metodoPagoId = mpRes.rows[0].id;
-        else {
-          const newMp = await client.query('INSERT INTO metodos_pago (nombre) VALUES ($1) RETURNING id', [metodo_pago]);
-          metodoPagoId = newMp.rows[0].id;
-        }
-      } else {
-        metodoPagoId = metodo_pago;
-      }
-    } else {
-      const mpRes = await client.query("SELECT id FROM metodos_pago WHERE nombre = 'Efectivo'");
-      if (mpRes.rows.length > 0) metodoPagoId = mpRes.rows[0].id;
+      const metodoPagoRes = await client.query(`
+        SELECT id FROM metodos_pago WHERE nombre = $1
+      `, [metodo_pago === 'tarjeta' ? 'Tarjeta de Crédito' : (metodo_pago === 'efectivo' ? 'Efectivo' : 'Tarjeta de Crédito')]);
+      metodo_pago_id = metodoPagoRes.rows.length > 0 ? metodoPagoRes.rows[0].id : null;
     }
 
-    // 3. Insert Sale (Header - No Ubicacion ID)
-    const nuevaVenta = await client.query(`
-      INSERT INTO ventas (
-        cliente_id, 
-        empleado_id, 
-        subtotal, 
-        impuestos, 
-        total, 
-        metodo_pago_id, 
-        direccion_id,
-        estado
-      )
+    // 4. Crear venta (cabecera)
+    const impuestos = subtotal * 0.13; // 13% IT en Bolivia
+    const total = subtotal + impuestos;
+
+    const ventaRes = await client.query(`
+      INSERT INTO ventas (cliente_id, empleado_id, subtotal, impuestos, total, metodo_pago_id, direccion_id, estado)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'completada')
-      RETURNING id
-    `, [clienteId, empleado_id || null, subtotal, impuestos, total, metodoPagoId, direccion_id]);
+      RETURNING id, codigo_venta
+    `, [clienteId, empleado_id || null, subtotal, impuestos, total, metodo_pago_id, direccion_id]);
 
-    const ventaId = nuevaVenta.rows[0].id;
+    const ventaId = ventaRes.rows[0].id;
+    const codigoVenta = ventaRes.rows[0].codigo_venta;
 
-    // Insert Details (trigger asigna ubicacion_id automáticamente)
+    // 5. Insertar detalles - TRIGGERS SE EJECUTAN AUTOMÁTICAMENTE:
+    // • restar_stock_venta() → Descuenta stock de ubicación con más disponible
+    // • procesar_kardex_automatico() → Registra movimiento en kardex
+    // • crear_garantia_auto() → Genera garantía por cada producto
     for (const detalle of detalles) {
       await client.query(`
-        INSERT INTO detalles_venta (
-          venta_id, 
-          producto_id,
-          cantidad, 
-          precio_unitario
-        )
+        INSERT INTO detalles_venta (venta_id, producto_id, cantidad, precio_unitario)
         VALUES ($1, $2, $3, $4)
       `, [ventaId, detalle.producto_id, detalle.cantidad, detalle.precio_unitario]);
     }
 
-    await client.query('COMMIT');
-    return Response.json({ success: true, data: { ventaId, total } });
+    // 6. El trigger crear_envio_automatico() crea el envío automáticamente al insertar venta
+
+    await client.query('COMMIT'); // Confirmar transacción
+
+    return Response.json({
+      success: true,
+      venta_id: ventaId,
+      codigo_venta: codigoVenta,
+      total: total
+    }, { status: 201 });
 
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error("Error processing sale:", error);
-    return Response.json(
-      { error: error.message || "Error al procesar la venta" },
-      { status: 500 }
-    );
+    await client.query('ROLLBACK'); // Revertir si hay error
+    console.error("Error creating venta:", error);
+    return Response.json({ error: error.message || "Error creating venta" }, { status: 500 });
   } finally {
-    client.release();
+    client.release(); // Liberar conexión al pool
   }
 }
 
-export async function GET() {
-  const client = await pool.connect();
+// GET - Listar ventas recientes con datos de cliente y empleado
+export async function GET(request) {
   try {
-    const result = await client.query(`
-            SELECT v.*, c.nombre as cliente_nombre, c.apellido as cliente_apellido, u.nombre as empleado_nombre
-            FROM ventas v
-            LEFT JOIN clientes c ON v.cliente_id = c.id
-            LEFT JOIN empleados e ON v.empleado_id = e.id
-            LEFT JOIN users u ON e.user_id = u.id
-            ORDER BY v.fecha DESC
-            LIMIT 100
-        `);
+    const { searchParams } = new URL(request.url);
+    const limit = searchParams.get("limit") || "20";
+
+    const result = await pool.query(`
+      SELECT 
+        v.*,
+        c.nombre as cliente_nombre,
+        c.apellido as cliente_apellido,
+        e.nombre as empleado_nombre,
+        m.nombre as metodo_pago_nombre
+      FROM ventas v
+      LEFT JOIN clientes c ON v.cliente_id = c.id
+      LEFT JOIN empleados e ON v.empleado_id = e.id
+      LEFT JOIN metodos_pago m ON v.metodo_pago_id = m.id
+      ORDER BY v.fecha DESC
+      LIMIT $1
+    `, [limit]);
+
     return Response.json(result.rows);
   } catch (error) {
-    console.error(error);
-    return Response.json({ error: 'Error fetching sales' }, { status: 500 });
-  } finally {
-    client.release();
+    console.error("Error fetching ventas:", error);
+    return Response.json({ error: "Error fetching ventas" }, { status: 500 });
   }
 }
