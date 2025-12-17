@@ -1,0 +1,1 @@
+node -e "require('argon2').hash('TU_CONTRASEÑA_WEY', { type: require('argon2').argon2id, memoryCost: 65536, timeCost: 3, parallelism: 4 }).then(console.log).catch(console.error)"
